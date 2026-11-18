@@ -111,3 +111,20 @@ AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDir
 | `NINFER_API_KEY` | 模型服务鉴权（如需要），放在 `%USERPROFILE%\.dsh\.env` 或进程环境 | 空 |
 
 > 代码中的默认绝对路径是作者机器的部署布局，仅作示例；迁移时用环境变量或配置覆盖，不要改代码逻辑。
+
+## 7. 编排脚本里的部署路径
+
+同目录的脚本现在按 `$PSScriptRoot` 互相查找（`start-bot` → `start-dsh` → watchdog / `run-detached.vbs` / `window-check`），所以仓库放在哪个盘都能串起来。仍需按你的机器修改的是**外部组件与工作目录**：
+
+| 文件 | 常量 / 位置 | 说明 |
+|---|---|---|
+| `orchestration/start-dsh.ps1` | `$Root`、`$PersonaRoot`、`$WorkDir`、`$QqClientPath` | DSH 部署根、persona 根、日志工作目录、QQ.exe 路径 |
+| `orchestration/start-bot.ps1` | `$Root`、`$LogPath`、`$script:PluginLog`、`$script:ModelId` | 部署根、启动日志、旧插件日志、日志里展示的模型名 |
+| `orchestration/bot-child-watchdog.ps1` | `$Components` 里的 `filePath` / `arguments` / `cwd` / `outLog` | venv python、`bridge.py`、AstrBot 实例目录（必须是含 `.astrbot` 的目录） |
+| `orchestration/stop-dsh.ps1` | `$WatchdogScripts`、`$Root\home\...` | 控制台/日志监看看护脚本的位置；不存在会跳过 |
+| `orchestration/harness-watchdog.ps1` | `$Definition` / `$Root` | Harness 可执行文件、profile 路径 |
+| `orchestration/reload-xzy.ps1` | AstrBot 数据根与插件目录 | 重载时复制/触达的路径 |
+| `console/watchdog.ps1` | `$server`、`$log` | 控制台入口与日志路径 |
+
+日志目录（`$WorkDir`）默认是 `<Root>\2026-11-10\qqbot-ninfer-bridge\work`，这是历史命名；换目录时同步改 `start-bot.ps1` 的 `$LogPath` 和 VBS 里的 `logPath`。
+

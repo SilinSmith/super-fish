@@ -19,6 +19,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Root = 'Y:\dsh'
+$Here = $PSScriptRoot
 $WorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $pauseMarker = Join-Path $WorkDir 'harness.watchdog.pause'
 $watchdogPidFile = Join-Path $WorkDir 'harness.watchdog.pid'
@@ -58,10 +59,10 @@ function Test-WatchdogAlive {
 # 生产链路：WMI -> wscript -> run-detached.vbs -> 隐藏 powershell。
 # 不经终端作业，所以脚本退出后守护不会被回收。
 function Start-WatchdogDetached {
-    $vbs = Join-Path $Root 'run-detached.vbs'
+    $vbs = Join-Path $Here 'run-detached.vbs'
     $outLog = Join-Path $WorkDir 'harness.watchdog.out.log'
     $cmd = 'wscript.exe //B //Nologo "{0}" "{1}" "{2}" 0 "powershell.exe" "-NoLogo" "-NoProfile" "-NonInteractive" "-ExecutionPolicy" "Bypass" "-File" "{3}"' -f `
-        $vbs, $Root, $outLog, (Join-Path $Root 'harness-watchdog.ps1')
+        $vbs, $Here, $outLog, (Join-Path $Here 'harness-watchdog.ps1')
     $result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd; CurrentDirectory = $Root }
     if ($result.ReturnValue -ne 0) { throw "启动守护失败（Win32_Process.Create ReturnValue=$($result.ReturnValue)）" }
     return [int]$result.ProcessId

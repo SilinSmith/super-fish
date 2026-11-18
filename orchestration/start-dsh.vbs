@@ -3,10 +3,12 @@ Option Explicit
 ' 隐藏窗口运行 start-bot.ps1 —— 默认只起基础设施（引擎 8094 / proxy 1240 / console 1242），
 ' 不接 QQ 流量。需要接流量时手动运行：start-bot.ps1 -ConnectTraffic。
 ' 失败时把日志末尾的 [FAIL] 行弹出来，明确是哪个组件、什么原因。
-Dim sh, code, logPath
+Dim sh, code, logPath, here
 logPath = "Y:\dsh\2026-11-10\qqbot-ninfer-bridge\work\start-bot.log"
 Set sh = CreateObject("WScript.Shell")
-code = sh.Run("powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""Y:\dsh\start-bot.ps1""", 0, True)
+Set fso = CreateObject("Scripting.FileSystemObject")
+here = fso.GetParentFolderName(WScript.ScriptFullName)
+code = sh.Run("powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File """ & here & "\start-bot.ps1""", 0, True)
 If code <> 0 Then
     MsgBox "QQ Bot 启动失败（退出码 " & code & "）。" & vbCrLf & vbCrLf & _
            "日志末尾：" & vbCrLf & Tail(logPath, 900) & vbCrLf & vbCrLf & _

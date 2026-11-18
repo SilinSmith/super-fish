@@ -30,12 +30,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$Here = $PSScriptRoot
 $WorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $LogPath = Join-Path $WorkDir 'bot-child.watchdog.log'
 $StatePath = Join-Path $WorkDir 'bot-child.watchdog.state.json'
 $PidPath = Join-Path $WorkDir 'bot-child.watchdog.pid'
 $PauseMarker = Join-Path $WorkDir 'bot-child.watchdog.pause'
-$Launcher = Join-Path $Root 'hidden-launch.ps1'
+$Launcher = Join-Path $Here 'hidden-launch.ps1'
 
 New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 

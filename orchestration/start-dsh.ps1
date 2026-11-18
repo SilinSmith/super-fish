@@ -57,6 +57,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Root = 'Y:\dsh'
+# 本脚本所在目录：同目录的 run-detached/watchdog/window-check 从这里找。
+$Here = $PSScriptRoot
 $PersonaRoot = Join-Path $Root 'home\qq-persona'
 $WorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $LogPath = Join-Path $WorkDir 'start-dsh.log'
@@ -337,7 +339,7 @@ function Start-ScriptCommand {
         [switch]$Visible
     )
 
-    $runner = Join-Path $Root 'run-detached.vbs'
+    $runner = Join-Path $Here 'run-detached.vbs'
     $style = if ($Visible) { 1 } else { 0 }
     $suffix = [System.IO.Path]::GetExtension($Command).ToLowerInvariant()
     $extra = @()
@@ -493,7 +495,7 @@ if ($DryRun) {
             $(if (Test-Path -LiteralPath $markerPath) { '存在（接流量时清除）' } else { '不存在' }))
     }
 
-    $restoreWatcher = Join-Path $Root 'engine-restore-watchdog.ps1'
+    $restoreWatcher = Join-Path $Here 'engine-restore-watchdog.ps1'
     $restoreProcs = @(Get-ScriptProcesses $restoreWatcher)
     Write-Log INFO ("  [1/9] 引擎恢复守护：{0}；{1}" -f `
         $(if ($restoreProcs.Count -gt 0) { "已在运行（pid $((($restoreProcs | ForEach-Object { $_.ProcessId }) -join ','))）" } else { '未运行' }),
@@ -539,7 +541,7 @@ if ($DryRun) {
         $astrPid = Get-PortStatus 6299
         $bridgeProcs = @(Get-CimInstance Win32_Process -Filter "Name='pythonw.exe' OR Name='python.exe'" -ErrorAction SilentlyContinue |
             Where-Object { $_.CommandLine -and $_.CommandLine -match 'qq-cutover[\\/]bridge\.py' })
-        $botChildWatcher = Join-Path $Root 'bot-child-watchdog.ps1'
+        $botChildWatcher = Join-Path $Here 'bot-child-watchdog.ps1'
         $botChildProcs = @(Get-ScriptProcesses $botChildWatcher)
         Write-Log INFO ("  [6/9] bridge：{0}；AstrBot(6299)：pid={1}；bot-child 守护：{2} -> {3}" -f `
             $(if ($bridgeProcs.Count -gt 0) { "已在运行（pid $((($bridgeProcs | ForEach-Object { $_.ProcessId }) -join ','))）" } else { '未运行' }),
@@ -602,7 +604,7 @@ foreach ($item in $taskArchiveItems) {
 #     独立于 Harness，走同一条 wscript //B -> run-detached.vbs 隐藏链路，不弹窗。
 Write-Log INFO ''
 Write-Log INFO '[1/9] 引擎恢复守护（engine-restore-watchdog.ps1）'
-$restoreWatcher = Join-Path $Root 'engine-restore-watchdog.ps1'
+$restoreWatcher = Join-Path $Here 'engine-restore-watchdog.ps1'
 if (-not (Test-Path -LiteralPath $restoreWatcher)) {
     Write-Log WARN "  找不到引擎恢复守护脚本：$restoreWatcher（出图期间宿主死掉将无法自愈）"
 }
@@ -874,7 +876,7 @@ else {
 #     拉起顺序由 bot-child-watchdog.ps1 的 $Components 决定（bridge 在前、AstrBot 在后）。
 Write-Log INFO ''
 Write-Log INFO '[6/9] bridge -> AstrBot（bot-child-watchdog.ps1）'
-$botChildWatcher = Join-Path $Root 'bot-child-watchdog.ps1'
+$botChildWatcher = Join-Path $Here 'bot-child-watchdog.ps1'
 $botChildWorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $botChildPauseMarker = Join-Path $botChildWorkDir 'bot-child.watchdog.pause'
 if (-not $ConnectTraffic) {
@@ -975,7 +977,7 @@ else {
     if (Test-Path -LiteralPath $pluginLog) { $pluginOffset = (Get-Item -LiteralPath $pluginLog).Length }
     # 宿主统一由 harness-watchdog.ps1 拉起并看守：崩溃后按退避自动重启，崩溃循环会停下来报错。
     # 这里不再直接 Start-Detached 宿主，否则守护看到宿主消失会立刻再拉一个，形成两套拉起逻辑。
-    $harnessWatchdog = Join-Path $Root 'harness-watchdog.ps1'
+    $harnessWatchdog = Join-Path $Here 'harness-watchdog.ps1'
     $harnessWorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
     $harnessPauseMarker = Join-Path $harnessWorkDir 'harness.watchdog.pause'
     $harnessPidFile = Join-Path $harnessWorkDir 'harness.watchdog.pid'
@@ -1092,7 +1094,7 @@ Write-Log INFO ("WebUI 地址：http://127.0.0.1:1242（{0}）" -f $webUiState)
 
 # 收尾自检：真实枚举顶层窗口，统计本脚本拉起的进程里还有几个可见控制台窗口。
 # 判定依据是 EnumWindows/IsWindowVisible，不是看代码推断。
-$checker = Join-Path $Root 'window-check.ps1'
+$checker = Join-Path $Here 'window-check.ps1'
 if (Test-Path -LiteralPath $checker) {
     try {
         $raw = (& $checker | Out-String)

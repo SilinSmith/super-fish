@@ -32,6 +32,8 @@ param(
 $ErrorActionPreference = 'Continue'
 
 $Root = 'Y:\dsh'
+# 本脚本所在目录：同目录的 watchdog 从这里找。
+$Here = $PSScriptRoot
 $WorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $LogPath = Join-Path $WorkDir 'stop-dsh.log'
 $TaskArchive = Join-Path $Root '归档\scheduled-tasks-20261116'
@@ -226,9 +228,9 @@ $Groups = @(
 
 # 自愈层：按脚本全路径精确匹配（避免把命令行里恰好提到这个名字的 Trae shell 当成看护进程）。
 $WatchdogScripts = @(
-    @{ Name = 'harness 看护'; Path = (Join-Path $Root 'harness-watchdog.ps1') },
-    @{ Name = 'AstrBot/bridge 看护'; Path = (Join-Path $Root 'bot-child-watchdog.ps1') },
-    @{ Name = '引擎恢复看护'; Path = (Join-Path $Root 'engine-restore-watchdog.ps1') },
+    @{ Name = 'harness 看护'; Path = (Join-Path $Here 'harness-watchdog.ps1') },
+    @{ Name = 'AstrBot/bridge 看护'; Path = (Join-Path $Here 'bot-child-watchdog.ps1') },
+    @{ Name = '引擎恢复看护'; Path = (Join-Path $Here 'engine-restore-watchdog.ps1') },
     @{ Name = 'qq-console 看护'; Path = (Join-Path $Root 'home\qq-console\watchdog.ps1') },
     @{ Name = '日志监看'; Path = (Join-Path $Root 'home\qq-persona\watch-logs.ps1') },
     @{ Name = 'xzy 宿主看护'; Path = 'E:\Bonsai\astrbot-eval\tools\xzy_host_watchdog.ps1' }

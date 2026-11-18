@@ -35,8 +35,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Root = 'Y:\dsh'
-$StartScript = Join-Path $Root 'start-dsh.ps1'
-$StopScript = Join-Path $Root 'stop-dsh.ps1'
+# 本脚本所在目录：同目录的 start/stop/watchdog 从这里找，仓库放到任何位置都能用。
+$Here = $PSScriptRoot
+$StartScript = Join-Path $Here 'start-dsh.ps1'
+$StopScript = Join-Path $Here 'stop-dsh.ps1'
 $LogPath = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work\start-bot.log'
 $script:PluginLog = Join-Path $Root 'home\qq-onebot-plugin\logs\s0.log'
 $script:PluginOffset = 0
@@ -342,7 +344,7 @@ else {
 if ($astrMissing.Count -gt 0) {
     Say INFO ''
     Say INFO '=== 启动 AstrBot + bridge（bot-child-watchdog.ps1，独立隐藏链） ==='
-    $botChildWatcher = Join-Path $Root 'bot-child-watchdog.ps1'
+    $botChildWatcher = Join-Path $Here 'bot-child-watchdog.ps1'
     $botChildWorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
     $botChildPause = Join-Path $botChildWorkDir 'bot-child.watchdog.pause'
     $botChildPidFile = Join-Path $botChildWorkDir 'bot-child.watchdog.pid'
@@ -362,7 +364,7 @@ if ($astrMissing.Count -gt 0) {
         Say INFO "  AstrBot/bridge 守护已在运行（pid $oldPid），由它拉起缺失组件。"
     }
     else {
-        $hiddenLauncher = Join-Path $Root 'hidden-launch.ps1'
+        $hiddenLauncher = Join-Path $Here 'hidden-launch.ps1'
         if (-not (Test-Path -LiteralPath $hiddenLauncher)) {
             Say ERROR "找不到无窗口启动器：$hiddenLauncher"
             exit 10
