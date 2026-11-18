@@ -1,0 +1,6 @@
+name: xzy
+author: dsh
+desc: 小助手 · 原生优先迁移：原生主干 + 原生没有的迁移能力（人格只读注入 / presence / 审计 / 工具）
+version: 0.1.0
+repo: https://example.invalid/xzy
+display_name: Xzy

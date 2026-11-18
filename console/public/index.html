@@ -1,0 +1,72 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QQ 控制台</title>
+<link rel="stylesheet" href="/style.css?v=20261118a">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <strong>QQ 控制台</strong>
+            <span>127.0.0.1:1242</span>
+        </div>
+        <nav id="nav">
+            <button data-page="status" class="active"><span class="ico">●</span>状态</button>
+            <button data-page="shadow"><span class="ico">◐</span>影子</button>
+            <button data-page="config"><span class="ico">≡</span>配置</button>
+            <button data-page="groups"><span class="ico">☷</span>群白名单</button>
+            <button data-page="logs"><span class="ico">▤</span>日志</button>
+            <button data-page="bili"><span class="ico">▶</span>B 站</button>
+            <button data-page="character"><span class="ico">✎</span>人格</button>
+            <button data-page="selfiter"><span class="ico">↻</span>自迭代</button>
+        </nav>
+        <div class="side-foot">
+            <p>只监听本机回环</p>
+            <p>静态资源本地内置 · 无 CDN</p>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="titles">
+                <h1 id="pageTitle">状态</h1>
+                <p id="pageHint">各组件存活与关键配置</p>
+            </div>
+            <div class="actions" id="actions">
+                <button data-action="start">启动</button>
+                <button data-action="stop" class="danger">停止</button>
+                <button data-action="restart" class="danger">重启</button>
+                <button data-action="engine-restart" class="danger" title="engine-control.ps1 -Action restart，只重启引擎">重启引擎</button>
+                <button data-action="reload" class="accent">重载配置</button>
+            </div>
+        </header>
+
+        <div id="banner" class="banner hidden"></div>
+        <section id="view" class="view"></section>
+    </main>
+</div>
+
+<div id="drawer" class="drawer hidden" aria-hidden="true">
+    <div class="drawer-head">
+        <h2 id="drawerTitle">操作</h2>
+        <button id="drawerClose" class="mini">关闭</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+</div>
+
+<div id="modal" class="modal hidden">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="modalTitle">统计报告</h2>
+            <button id="modalClose" class="mini">关闭</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+    </div>
+</div>
+
+<script src="/app.js?v=20261118a"></script>
+</body>
+</html>

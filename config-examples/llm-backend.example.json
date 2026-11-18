@@ -1,0 +1,55 @@
+{
+  "engine": "ninfer",
+  "baseUrl": "http://127.0.0.1:8094/v1",
+  "apiKey": "",
+  "model": "<MODEL_NAME>",
+  "healthPath": "/v1/models",
+  "requestTimeoutMs": 300000,
+  "maxTokens": 1536,
+  "analyzeTimeoutMs": 5000,
+  "analyzeMaxTokens": 160,
+  "budgetTokens": 1800,
+  "replyHistoryMessages": 20,
+  "contextWindowTokens": 32768,
+  "reviewTimeoutMs": 120000,
+  "visionTimeoutMs": 20000,
+  "supportsChatTemplateKwargs": false,
+  "supportsVision": true,
+  "forwardClientAuth": false,
+  "engineControl": {
+    "mode": "external",
+    "startCommand": "<NINFER_ROOT>\\start-ninfer.ps1",
+    "startArguments": [],
+    "startWorkingDirectory": "<NINFER_ROOT>",
+    "startLogPath": "<LOG_ROOT>\\start.log",
+    "startEnv": {},
+    "stopCommand": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "stopArguments": [
+      "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+      "-File", "<NINFER_ROOT>\\stop-ninfer.ps1", "-AllowDirect"
+    ],
+    "stopWorkingDirectory": "<NINFER_ROOT>",
+    "stopProcess": "ninfer-serve-*.exe",
+    "controlScript": "<NINFER_ROOT>\\engine-control.ps1",
+    "controlWorkingDirectory": "<NINFER_ROOT>",
+    "restoreLogPath": "<LOG_ROOT>\\engine-restore.log",
+    "healthUrl": "",
+    "readyTimeoutMs": 600000,
+    "stopWaitMs": 30000,
+    "allowConcurrent": false
+  },
+  "proxy": {
+    "port": 1240,
+    "nodePath": ""
+  },
+  "qq": {
+    "startCommand": "node.exe",
+    "startArguments": ["<SNOWLUMA_ROOT>\\index.mjs"],
+    "startWorkingDirectory": "<SNOWLUMA_ROOT>",
+    "startLogPath": "<LOG_ROOT>\\snowluma.out.log",
+    "healthPort": 3001,
+    "readyTimeoutMs": 60000,
+    "harnessCommand": "<DSH_ROOT>\\DeepSeek Harness.exe",
+    "stopCommand": ""
+  }
+}

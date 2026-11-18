@@ -1,0 +1,11 @@
+{
+  "name": "@dsh/qq-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "QQ 入站归一化平台层：canonical event schema + 唯一 renderer（单一事实源）",
+  "exports": {
+    ".": "./src/index.js",
+    "./schema": "./src/schema.js"
+  }
+}

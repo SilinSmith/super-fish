@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "bot": {
+    "qq": "10001",
+    "masterQQ": "10000",
+    "adminUsers": [],
+    "knownBots": ["10001"]
+  },
+  "runtime": {
+    "cwd": "<REPO_ROOT>\\qq-channel\\onebot-plugin\\shadow",
+    "provider": "ninfer",
+    "model": "<MODEL_NAME>",
+    "agentPreset": "",
+    "turnTimeoutMs": 120000,
+    "agentIdleMs": 1800000
+  },
+  "debounce": {
+    "enabled": true,
+    "baseMs": 1200,
+    "groupMs": 2200,
+    "imageMs": 7000,
+    "maxBatch": 8
+  },
+  "dedupWindowSec": 300,
+  "default": {
+    "trigger": {
+      "mode": "at",
+      "keywords": [],
+      "regex": "",
+      "chance": 1.0,
+      "replyToBot": true,
+      "mentionNames": ["小助手", "助手", "helper"],
+      "banter": true
+    },
+    "replyChance": 1.0,
+    "limits": {
+      "perMinute": 30,
+      "perHour": 0,
+      "perDay": 0,
+      "cooldownSec": 0
+    },
+    "dnd": {
+      "start": "",
+      "end": "",
+      "timezone": "Asia/Shanghai"
+    },
+    "review": true,
+    "access": {
+      "allowAll": false,
+      "dmPolicy": "allowlist",
+      "allowUsers": ["10000"],
+      "denyUsers": [],
+      "groupPolicy": "allowlist",
+      "allowGroups": [],
+      "denyGroups": []
+    }
+  },
+  "groups": {}
+}

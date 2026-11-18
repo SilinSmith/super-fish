@@ -1,0 +1,20 @@
+{
+  "name": "qq-onebot",
+  "version": "0.0.1",
+  "private": true,
+  "description": "自研 OneBot 11 通道（替换 dsh-onebot-qq）：S0 阶段只连 WS、只写日志，不发送任何消息。",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

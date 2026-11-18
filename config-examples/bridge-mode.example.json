@@ -1,0 +1,5 @@
+{
+  "mode": "groups",
+  "group_ids": ["100000001"],
+  "_note": "mode 可选 old | private | one-group | groups | all；old 表示不转发。默认路径是 bridge 工作目录下的 bridge-mode.json，可用 --mode-file 覆盖；bridge 会按 mtime 重读，但启动脚本的前置校验只在启动时做一次。"
+}

@@ -1,0 +1,71 @@
+# 依赖与构建产物
+venv/
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+dist/
+build/
+
+# 真实配置（只提交示例）
+config.json
+xzy-config.json
+bridge-mode.json
+llm-backend.json
+cordis.patch.yml
+.env
+
+# 人格 / 记忆 / 日记 / 身份
+character.md
+notebook.json
+diary.jsonl
+identity-*.jsonl
+identity-candidates.json
+asks.jsonl
+ask-queue.jsonl
+ask-answers.json
+bili-cookies.json
+
+# 日志 / 审计 / 台账 / 状态
+*.log
+*.jsonl
+logs/
+state/
+backups/
+group-state/
+sessions/
+audit/
+history_snapshots/
+run.lock
+
+# 媒体与模型
+media/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.mp3
+*.wav
+*.ogg
+*.mp4
+*.mkv
+*.safetensors
+*.gguf
+*.bin
+*.db
+*.sqlite
+*.sqlite3
+
+# 二进制
+*.exe
+*.dll
+*.node
+*.zip
+*.7z
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

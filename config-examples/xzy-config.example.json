@@ -1,0 +1,99 @@
+{
+  "master_qq": "10000",
+  "persona_path": "<ASTRBOT_DATA>/xzy/persona/character.md",
+  "notebook_path": "<ASTRBOT_DATA>/xzy/persona/notebook.json",
+  "media_dir": "",
+
+  "trigger": {
+    "mode": "at",
+    "keywords": [],
+    "regex": "",
+    "chance": 1.0,
+    "replyToBot": true,
+    "mentionNames": ["小助手", "助手", "helper"],
+    "banter": true
+  },
+
+  "access": {
+    "allowAll": false,
+    "dmPolicy": "allowlist",
+    "allowUsers": ["10000"],
+    "denyUsers": [],
+    "groupPolicy": "allowlist",
+    "allowGroups": [],
+    "denyGroups": []
+  },
+
+  "dm": {
+    "trigger": {
+      "mode": "always"
+    }
+  },
+
+  "limits": {
+    "perMinute": 30,
+    "perHour": 0,
+    "perDay": 0,
+    "cooldownSec": 0
+  },
+
+  "dnd": {
+    "start": "",
+    "end": "",
+    "timezone": "Asia/Shanghai"
+  },
+
+  "judge": {
+    "enabled": false,
+    "groups": [],
+    "mergeWindowMs": 5000,
+    "timeoutMs": 3000,
+    "queueLimit": 3,
+    "proxyBase": "http://127.0.0.1:1240",
+    "continuationWindowMs": 30000,
+    "continuationStaleMs": 120000
+  },
+
+  "free_chat": {
+    "enabled": false,
+    "groups": {}
+  },
+
+  "identity": {
+    "enabled": true,
+    "dir": "",
+    "injectLimit": 3
+  },
+
+  "self_iter": {
+    "enabled": true,
+    "auto_apply": false,
+    "auto": {
+      "enabled": true,
+      "idleMinutes": 10,
+      "gapHours": 3,
+      "maxPerDay": 8,
+      "materialLimit": 30,
+      "pollSeconds": 60
+    }
+  },
+
+  "review": {
+    "enabled": false,
+    "url": "http://127.0.0.1:1240/review",
+    "model": "",
+    "timeoutMs": 12000,
+    "maxAttempts": 2,
+    "failOpen": true
+  },
+
+  "tts": {
+    "enabled": false,
+    "url": "http://127.0.0.1:5000",
+    "modelName": "",
+    "speakerName": "",
+    "style": "Neutral",
+    "timeoutMs": 120000,
+    "maxChars": 500
+  }
+}
