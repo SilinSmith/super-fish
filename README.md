@@ -103,7 +103,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\orchestration\stop-dsh.ps1
 
 ### 需要你自己准备的私有内容
 
-人格文件（`character.md`）、记忆/日记/身份索引、`config.json` 里的账号与白名单、bridge 模式文件、各类 cookie/token。仓库只给脱敏示例，见 **[docs/configuration.md](docs/configuration.md)**。
+人格文件（`character.md`）、记忆/日记/身份索引、表情表 `faces.json`、`config.json` 里的账号与白名单、bridge 模式文件、各类 cookie/token。仓库只给脱敏示例，见 **[docs/configuration.md](docs/configuration.md)**；`faces.json` 的生成方法见 **[docs/faces.md](docs/faces.md)**。
 
 ---
 
@@ -146,17 +146,23 @@ qq-stack/
 
 ## 7. 没定的事
 
-- **许可证未定**（作者尚未决定，暂不添加 `LICENSE`；对外使用前请先确认）。
 - 模型名与推理引擎参数（上下文长度、KV 池、并发）依赖具体硬件，仓库只给占位。
-- `astrbot-plugin/xzy/faces.json` 是上游表情目录的衍生物，未纳入；插件在文件缺失时降级为不发表情。
 - 人格文件格式、记忆 schema 只做了文字说明，没有随仓库提供真实样本。
+- 表情表 `faces.json` 不入库，按 [docs/faces.md](docs/faces.md) 从 SnowLuma 的 `data/sys-face-catalog.json` 自行导出。
 
 ---
 
-## 8. 相关文档
+## 8. 许可证
+
+本项目采用 **MIT License**，版权人 **SilinSmith**，全文见 [LICENSE](LICENSE)。
+
+---
+
+## 9. 相关文档
 
 - [架构与职责边界](docs/architecture.md)
 - [上游依赖与魔改点](docs/upstream.md)
 - [配置项与需要自己填的内容](docs/configuration.md)
 - [被排除的内容与原因](docs/excluded.md)
+- [系统表情表 faces.json 的生成方法](docs/faces.md)
 - [运维手册（启停/日志/排障）](docs/operations.md)

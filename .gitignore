@@ -17,6 +17,7 @@ cordis.patch.yml
 
 # 人格 / 记忆 / 日记 / 身份
 character.md
+faces.json
 notebook.json
 diary.jsonl
 identity-*.jsonl

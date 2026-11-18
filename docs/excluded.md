@@ -35,7 +35,7 @@
 - QQ NT
 - DeepSeek Harness 宿主与 `dsh-onebot-qq` 插件
 - NapCat（本方案未使用）
-- 任何从上游复制的表情目录（`faces.json` 属于 SnowLuma 表情目录的衍生物，未纳入；缺失时插件自动降级为不发表情）
+- 任何从上游复制的表情目录（`faces.json` 属于 SnowLuma 表情目录的衍生物，未纳入；缺失时插件自动降级为不发表情，生成方法见 [faces.md](faces.md)）
 
 需要改上游的地方，用 `astrbot-plugin/patches/registry.md` 的逐处说明 + `apply.py` 记录，不整份拷贝。
 
