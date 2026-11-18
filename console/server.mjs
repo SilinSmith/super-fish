@@ -160,10 +160,9 @@ const HARNESS_WATCHDOG_PID = join(BRIDGE_WORK, 'harness.watchdog.pid');
 const MEDIA_SESSIONS_PATH = 'C:\\Users\\user\\.dsh\\media\\onebot\\chat-sessions.json';
 const SCHEDULER_STATE_PATH = join(PERSONA_DIR, 'scheduler-state.json');
 const SCHEDULER_TASKS = ['defer.sweep', 'groupState.compact', 'presence.decay', 'heartbeat.persist', 'comfy.idleFree', 'health.probe', 'sticker.maintain'];
-// SnowLuma 自己按天写日志（未配置 startLogPath 时这是唯一可看的输出）。
-const SNOWLUMA_DIR = 'Y:\\SnowLuma';
-const SNOWLUMA_LOG_DIR = join(SNOWLUMA_DIR, 'logs');
-const SNOWLUMA_OUT_LOG = join(BRIDGE_WORK, 'snowluma.out.log');
+// 外部 OneBot 协议端的日志目录：协议端需自备，目录通过环境变量按需指定（可留空）。
+const ONEBOT_LOG_DIR = process.env.QQ_CONSOLE_ONEBOT_LOG_DIR ?? '';
+const ONEBOT_OUT_LOG = join(BRIDGE_WORK, 'onebot.out.log');
 // 可见控制台窗口自检脚本（EnumWindows 实现，见脚本头部注释）。
 const WINDOW_CHECK_SCRIPT = join(DSH_ROOT, 'window-check.ps1');
 // 宿主守护（harness-watchdog.ps1）写出的状态与日志：面板据此展示「挂了多久、死因」。
@@ -180,7 +179,7 @@ const CUTOVER_STALE_MS = 10 * 60_000;
 const HEALTH_MONITOR_MS = 30 * 1000;
 const HEALTH_ALERT_GRACE_MS = 60 * 1000;
 const HEALTH_ALERT_REPEAT_MS = 15 * 60 * 1000;
-const HEALTH_CRITICAL = new Set(['engine', 'proxy', 'snowluma', 'harness', 'plugin']);
+const HEALTH_CRITICAL = new Set(['engine', 'proxy', 'harness', 'plugin']);
 
 // 拓扑视图的数据源：全部是上面这些组件已经在读的同一批文件，不另造状态。
 const FEED_PATH = join(PERSONA_DIR, 'conversation-feed.jsonl');
@@ -826,7 +825,7 @@ const LIVENESS_PROBE_TIMEOUT_MS = 1500;
 
 let livenessCache = { at: 0, value: null, pending: null };
 
-/** 通过现成的 OneBot WS 通道问一次 get_status；不依赖 SnowLuma 的 HTTP 鉴权。 */
+/** 通过现成的 OneBot WS 通道问一次 get_status；不依赖 OneBot 协议端 的 HTTP 鉴权。 */
 function readOneBotStatus(timeoutMs = LIVENESS_PROBE_TIMEOUT_MS) {
     return new Promise(resolvePromise => {
         let socket;
@@ -878,7 +877,7 @@ function readOneBotStatus(timeoutMs = LIVENESS_PROBE_TIMEOUT_MS) {
                 serverTime: payload?.data?.time ?? null,
             });
         });
-        socket.addEventListener('error', () => finish({ ok: false, error: 'WS 连接错误（SnowLuma 可能未运行）' }));
+        socket.addEventListener('error', () => finish({ ok: false, error: 'WS 连接错误（OneBot 协议端 可能未运行）' }));
         socket.addEventListener('close', () => finish({ ok: false, error: 'WS 在应答前关闭' }));
     });
 }
@@ -1080,7 +1079,7 @@ async function scheduledTaskFacts() {
 }
 
 async function componentStatus(options = {}) {
-    const [engineHttp, proxyHttp, snowTcp, comfyTcp, processes, windowReport] = await Promise.all([
+    const [engineHttp, proxyHttp, onebotTcp, comfyTcp, processes, windowReport] = await Promise.all([
         httpJson('http://127.0.0.1:8094/v1/models', 3000).catch(error => ({ __error: error?.message ?? String(error) })),
         httpJson('http://127.0.0.1:1240/health', 2500).catch(error => ({ __error: error?.message ?? String(error) })),
         tcpAlive(3001),
@@ -1187,23 +1186,23 @@ async function componentStatus(options = {}) {
         log: logRef('tts/tts.stdout.log', TTS_LOG_PATH),
     };
 
-    /* SnowLuma */
-    const snowLogFile = newestLogIn(SNOWLUMA_LOG_DIR);
-    const snow = {
-        id: 'snowluma',
-        label: 'SnowLuma',
+    /* OneBot 协议端 */
+    const onebotLogFile = newestLogIn(ONEBOT_LOG_DIR);
+    const onebot = {
+        id: 'onebot',
+        label: 'OneBot 协议端',
         role: '3001 · OneBot 11 WebSocket',
-        state: snowTcp ? 'ok' : 'down',
-        summary: snowTcp ? 'WS 端口监听中' : '未运行',
+        state: onebotTcp ? 'ok' : 'down',
+        summary: onebotTcp ? 'WS 端口监听中' : '未运行',
         facts: [
             fact('OneBot WS', 'ws://127.0.0.1:3001'),
-            fact('端口', snowTcp ? '监听' : '未监听'),
-            fact('启停口径', '警告项（未就绪不影响退出码；QQ 未登录就不会起）'),
+            fact('端口', onebotTcp ? '监听' : '未监听'),
+            fact('启停口径', '外部依赖（需自行启动；未就绪不影响退出码）'),
         ],
-        detail: snowTcp ? '仅探测端口存活，未做协议握手。' : '请用启动脚本拉起 SnowLuma。',
-        log: snowLogFile
-            ? logRef('snowluma/' + snowLogFile.name, join(SNOWLUMA_LOG_DIR, snowLogFile.name))
-            : logRef('script/snowluma.out.log', SNOWLUMA_OUT_LOG),
+        detail: onebotTcp ? '仅探测端口存活，未做协议握手。' : '请先自行启动你的 OneBot 11 协议端（需提供 3000/3001）。',
+        log: onebotLogFile
+            ? logRef('onebot/' + onebotLogFile.name, join(ONEBOT_LOG_DIR, onebotLogFile.name))
+            : logRef('script/onebot.out.log', ONEBOT_OUT_LOG),
     };
 
     /* Harness */
@@ -1695,7 +1694,7 @@ async function componentStatus(options = {}) {
         log: logRef('harness/harness.watchdog.log', HARNESS_WATCHDOG_LOG),
     };
 
-    const components = [engine, tts, proxy, snow, comfy, harness, plugin, scheduler, engineWatchdog, harnessWatchdog, security, drawReview, bili];
+    const components = [engine, tts, proxy, onebot, comfy, harness, plugin, scheduler, engineWatchdog, harnessWatchdog, security, drawReview, bili];
     // 「挂了多久」记录下来，monitor 模式（后台定时器）才会弹桌面提醒。
     applyHealthTracking(components, options);
     const bad = components.filter(item => item.state === 'down').length;
@@ -3441,11 +3440,11 @@ function saveGroupAccess(body) {
 
 const LOG_GROUPS = {
     plugin: { label: 'qq-onebot 插件（旧栈）', dir: join(PLUGIN_DIR, 'logs'), dynamic: true },
-    snowluma: { label: 'SnowLuma', dir: SNOWLUMA_LOG_DIR, dynamic: true },
+    onebot: { label: 'OneBot 协议端', dir: ONEBOT_LOG_DIR, dynamic: true },
     proxy: { label: 'persona proxy', dir: PERSONA_DIR, files: ['proxy.log', 'proxy.stdout.log', 'proxy.stderr.log'] },
-    script: { label: '启停脚本', dir: BRIDGE_WORK, files: ['start-dsh.log', 'stop-dsh.log', 'snowluma.out.log'] },
+    script: { label: '启停脚本', dir: BRIDGE_WORK, files: ['start-dsh.log', 'stop-dsh.log', 'onebot.out.log'] },
     engine: { label: 'ninfer 引擎', dir: ENGINE_LOG_DIR, dynamic: true },
-    harness: { label: '宿主守护', dir: BRIDGE_WORK, files: ['harness.watchdog.log', 'snowluma.out.log'] },
+    harness: { label: '宿主守护', dir: BRIDGE_WORK, files: ['harness.watchdog.log', 'onebot.out.log'] },
     console: { label: '控制台', dir: CONSOLE_DIR, files: ['console.watchdog.log', 'console.out.log', 'console.err.log'] },
     comfyui: { label: 'ComfyUI', dir: PERSONA_DIR, files: ['comfyui.log', 'comfyui.out.log', 'comfyui.err.log'] },
     state: {

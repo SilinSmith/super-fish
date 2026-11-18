@@ -1,44 +1,42 @@
 ﻿# QQ Bot 启动脚本。两种模式（默认只起基础设施，绝不接流量）：
 #   基础设施（默认）：看护层/计划任务 -> 引擎恢复守护 -> ninfer 引擎 -> TTS -> persona proxy -> qq-console
-#   接流量（-ConnectTraffic）：在上面基础上按顺序补齐 SnowLuma + QQ 客户端 -> bridge -> AstrBot -> DeepSeek Harness
+#   接流量（-ConnectTraffic）：在上面基础上探测外部 OneBot 协议端，再拉起 bridge -> AstrBot -> DeepSeek Harness
 #
 # 严格顺序（编号即执行顺序，共 9 步）：
 #   [0/9] 看护层/计划任务 -> [1/9] 引擎恢复守护 -> [2/9] ninfer 引擎(8094) -> [3/9] TTS(5000)
-#   -> [4/9] persona proxy(1240) -> [5/9] SnowLuma(3001) + QQ 客户端(注入宿主)
+#   -> [4/9] persona proxy(1240) -> [5/9] 外部 OneBot 协议端(3000/3001，需自备)
 #   -> [6/9] bridge -> AstrBot(6299/6199) -> [7/9] qq-console(1242) -> [8/9] DeepSeek Harness
-# 每一步都是「未监听才拉起」，随后按端口/健康请求等待就绪，各自有独立超时；
+# 除协议端外，每一步都是「未监听才拉起」，随后按端口/健康请求等待就绪，各自有独立超时；
 # 超时只记「失败/警告」，不中断整轮，最后统一汇总。
 #
 # 幂等：已在运行的组件跳过；只有端口没人监听时才拉起新进程。
 # 接流量前必须校验 bridge-mode.json：mode=old（不转发）或 one-group 缺 group_id 时直接拒绝启动，
 # 因为 bridge 只在进程启动时读该文件，宿主（Harness）起来后再改就得重启宿主才生效。
-# QQ 客户端（D:\NewPrograms\QQ NT\QQ.exe）是 SnowLuma 的注入宿主：接流量时若未运行就拉起，
-# 已在运行则跳过（绝不重复起）。拉起后等 3000/3001 就绪再继续 bridge/AstrBot/Harness：
-# 3001 = OneBot WS，3000 = OneBot HTTP。QQ 起来了但 3000/3001 一直不监听 =
-# 白名单账号（SNOWLUMA_HOOK_AUTOLOAD_UINS，默认 10001）还没登录，按警告项处理：
-# 写清原因，不改变退出码。
+# 外部 OneBot 协议端（3001 = OneBot WS，3000 = OneBot HTTP）不在本脚本的拉起范围：
+# 它需要你自己安装、登录并保证可用。脚本只做端口探测；未就绪按警告项处理，
+# 写清原因，不改变退出码，因为协议端是否在线属于用户侧状态。
 # 所有子进程都通过 WMI Win32_Process.Create 启动 wscript.exe（GUI 子系统，无控制台），
 # 再由 run-detached.vbs 以隐藏样式拉起真正的目标进程；既脱离调用方终端作业，
 # 也不会留下任何可被用户关掉的可见控制台窗口（关掉它会把 node 一起杀死）。
 # ComfyUI(8188) 不在本脚本范围内：不探测、不拉起、不进退出码与摘要，由用户自管。
 #
 # 用法： powershell -ExecutionPolicy Bypass -File Y:\dsh\start-dsh.ps1
-#        ... -ConnectTraffic  接 QQ 流量（SnowLuma + QQ 客户端 + bridge/AstrBot + Harness）；默认不接
+#        ... -ConnectTraffic  接 QQ 流量（外部协议端 + bridge/AstrBot + Harness）；默认不接
 #        ... -SkipEngine      只检查引擎，不拉起
 #        ... -SkipTTS         不拉起 TTS（5000）
 #        ... -SkipProxy       只检查 proxy，不拉起
-#        ... -SkipQQ          不尝试启动 SnowLuma / QQ 客户端与 DeepSeek Harness（与 -ConnectTraffic 互斥）
+#        ... -SkipQQ          不检查外部 OneBot 协议端与 DeepSeek Harness（与 -ConnectTraffic 互斥）
 #        ... -SkipConsole     不拉起 qq-console（1242 状态面板）
 #        ... -FailFast        核心项未就绪立即中止并 exit 10（启动入口 start-bot.ps1 用这个开关；警告项不中止）
 #        ... -DryRun          只读探测：打印模式、每个组件当前状态与将执行的动作，不拉起任何进程
 #
 # 退出码口径（核心项 / 警告项）：
 #   核心项失败才返回非 0。核心项 = 引擎 8094、TTS 5000、proxy 1240、bridge、AstrBot 6199/6299、qq-console 1242。
-#   警告项（只写 WARN 日志并列入收尾摘要，不改变退出码）= QQ/SnowLuma（3000/3001）、由此导致的插件 WS 未连、
-#   DeepSeek Harness 宿主未出现。
+#   警告项（只写 WARN 日志并列入收尾摘要，不改变退出码）= 外部 OneBot 协议端（3000/3001）、
+#   由此导致的插件 WS 未连、DeepSeek Harness 宿主未出现。
 #   桌面快捷方式走隐藏窗口看不到控制台，因此警告/跳过必须落在日志与收尾摘要里。
 # 退出码：0 = 核心项全部就绪（允许有警告项/跳过项）/ 1 = 有核心项失败 / 2 = 配置或参数错误 /
-#         3 = 引擎（-SkipEngine 但端口没监听）/ 4 = proxy / 5 = QQ 配置 / 6 = Harness 路径或守护脚本缺失 /
+#         3 = 引擎（-SkipEngine 但端口没监听）/ 4 = proxy / 6 = Harness 路径或守护脚本缺失 /
 #         7 = bridge-mode.json 不合格 / 10 = -FailFast 下核心项失败（警告项不中止）
 # 日志：Y:\dsh\2026-11-10\qqbot-ninfer-bridge\work\start-dsh.log
 # 桌面快捷方式：Y:\dsh\start-dsh.vbs（失败时弹窗提示日志位置）
@@ -63,8 +61,6 @@ $PersonaRoot = Join-Path $Root 'home\qq-persona'
 $WorkDir = Join-Path $Root '2026-11-10\qqbot-ninfer-bridge\work'
 $LogPath = Join-Path $WorkDir 'start-dsh.log'
 $ConfigPath = if ($env:QQ_LLM_CONFIG) { $env:QQ_LLM_CONFIG } else { Join-Path $PersonaRoot 'llm-backend.json' }
-# QQ 客户端 = SnowLuma 注入的宿主；按实际安装路径（注册表 DisplayIcon 同源）拉起。
-$QqClientPath = 'D:\NewPrograms\QQ NT\QQ.exe'
 
 New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 
@@ -186,7 +182,7 @@ function Wait-ComponentReady {
 function Set-NotReady {
     param([string]$Name, [string]$Reason = '', [switch]$Warning)
     $text = if ($Reason) { $Reason } else { '见上方日志' }
-    # -Warning：非核心项（QQ/SnowLuma、插件 WS、Harness 宿主）。
+    # -Warning：非核心项（OneBot 协议端、插件 WS、Harness 宿主）。
     # 只写 WARN 并进警告桶，不影响退出码；桌面快捷方式看不到退出码，口径必须落在日志里。
     if ($Warning) {
         if ($script:Warnings -notcontains $Name) { [void]$script:Warnings.Add($Name) }
@@ -211,79 +207,15 @@ function Add-Skipped {
     if ($Reason) { Write-Log INFO ("[SKIP] {0}：{1}" -f $Name, $Reason) }
 }
 
-# === 白名单 QQ 账号在线判定 ===
-# SnowLuma 只给白名单账号注入 hook（Y:\SnowLuma\index.mjs：shouldAutoLoadUin 读
-# SNOWLUMA_HOOK_AUTOLOAD_UINS，默认 "10001"；非白名单账号打 auto-load skip 后直接放弃）。
-# 这里取同一份 UIN 列表，口径与 SnowLuma 一致，不能只看「有没有 QQ 登录了」。
-function Get-WhitelistUins {
-    $raw = $env:SNOWLUMA_HOOK_AUTOLOAD_UINS
-    if (-not $raw) { $raw = '10001' }
-    return @($raw.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '^\d+$' })
-}
-
-function Get-OneBotToken {
-    param([string]$Uin)
-    $path = Join-Path 'Y:\SnowLuma\config' ("onebot_$Uin.json")
-    if (-not (Test-Path -LiteralPath $path)) { return '' }
-    try {
-        $onebot = Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
-        $server = @($onebot.networks.httpServers)[0]
-        if ($server -and $server.accessToken) { return [string]$server.accessToken }
-    }
-    catch { }
-    return ''
-}
-
-# 真实探测：OneBot HTTP /get_login_info 的 user_id 就是 SnowLuma 当前挂上的账号。
-# 3000 不监听（SnowLuma 还没注入）或返回值不是白名单账号（登录的是别的号）都算离线。
-function Test-WhitelistQqOnline {
-    $uins = @(Get-WhitelistUins)
-    if ($uins.Count -eq 0) { return $false }
-    foreach ($uin in $uins) {
-        $token = Get-OneBotToken -Uin $uin
-        $headers = @{}
-        if ($token) { $headers['Authorization'] = 'Bearer ' + $token }
-        try {
-            $info = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/get_login_info' -Headers $headers -TimeoutSec 2 -ErrorAction Stop
-            $self = [string]$info.data.user_id
-            if ($self -and ($uins -contains $self)) {
-                Write-Log INFO "  白名单 QQ 已在线（uin=$self，OneBot 3000 应答）"
-                return $true
-            }
-            if ($self) { Write-Log INFO "  QQ 当前登录账号 $self 不在白名单（$($uins -join ',')）" }
-        }
-        catch { }
-    }
-    return $false
-}
-
-# === QQ 客户端（SnowLuma 注入宿主） ===
-# 注入本身由 SnowLuma 完成：node 起来后自行枚举 QQ.exe 并按白名单账号注入，
-# 因此脚本只需保证宿主在跑 —— 未运行就按实际安装路径拉起，已在运行则跳过。
-function Test-QqClientRunning {
-    return (@(Get-Process -Name 'QQ' -ErrorAction SilentlyContinue).Count -gt 0)
-}
-
-function Start-QqClientIfNeeded {
-    if (Test-QqClientRunning) { return 'running' }
-    if (-not (Test-Path -LiteralPath $QqClientPath)) { return 'missing' }
-    Write-Log INFO "  启动 QQ 客户端（SnowLuma 注入宿主）：$QqClientPath"
-    # -Visible：QQ 是 GUI 程序，style 0 会把主窗口一起隐藏；这里按 GUI 正常显示拉起。
-    Start-ScriptCommand -Command $QqClientPath -WorkingDirectory (Split-Path -Parent $QqClientPath) -Visible
-    return 'launched'
-}
-
-# QQ/SnowLuma 就绪口径：3000（OneBot HTTP）与 3001（OneBot WS）都在监听，
-# 且 SnowLuma 自己的 WebUI 5099 应答。只看 3001 会把「端口刚开、OneBot 还没挂上」当就绪；
-# 只看端口会把「QQ 没登录」当就绪。
-function Wait-QqAndSnowLumaReady {
+# 外部 OneBot 协议端就绪口径：3000（OneBot HTTP）与 3001（OneBot WS）都在监听。
+# 协议端需要用户自行安装、启动并登录；本脚本不拉起、不等待登录。
+function Wait-OneBotEndpointReady {
     param([int]$TimeoutMs = 60000)
     $startedAt = Get-Date
     $deadline = $startedAt.AddMilliseconds($TimeoutMs)
     while ((Get-Date) -lt $deadline) {
-        if ((Get-PortStatus 3000) -ne 0 -and (Get-PortStatus 3001) -ne 0 -and
-            (Test-ComponentReady -Port 0 -HealthUrl 'http://127.0.0.1:5099/')) {
-            Write-Log INFO ("  QQ/SnowLuma 已就绪（{0:N1}s：3000/3001 在监听 + 5099 应答）" -f ((Get-Date) - $startedAt).TotalSeconds)
+        if ((Get-PortStatus 3000) -ne 0 -and (Get-PortStatus 3001) -ne 0) {
+            Write-Log INFO ("  OneBot 协议端 已就绪（{0:N1}s：3000/3001 在监听）" -f ((Get-Date) - $startedAt).TotalSeconds)
             return $true
         }
         Start-Sleep -Milliseconds 400
@@ -403,27 +335,8 @@ function Start-ScriptCommand {
     Start-Detached -CommandLine ($parts -join ' ') -WorkingDirectory $WorkingDirectory
 }
 
-# 拉起与等待分开写：SnowLuma（要等 QQ 注入）和面板（node 冷启动）都慢，
-# 由各自阶段内的 Wait-ComponentReady 负责等待，本函数只负责「未监听才发起」。
-function Start-SnowLumaIfNeeded {
-    if ($SkipQQ) { return 'skipped' }
-    if (-not ($config.qq -and $config.qq.startCommand)) { return 'no-config' }
-    $port = if ($config.qq.healthPort) { [int]$config.qq.healthPort } else { 3001 }
-    if ((Get-PortStatus $port) -ne 0) { return 'running' }
-    # 两段式进程树：监督进程不监听端口，只看端口会在「树已起、端口未起」的窗口里重复拉起。
-    $trees = @(Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -and $_.CommandLine -match 'SnowLuma[\\/]index\.mjs' })
-    if ($trees.Count -gt 0) {
-        $treePids = ($trees | ForEach-Object { $_.ProcessId }) -join ','
-        Write-Log INFO "  SnowLuma 进程树已在运行（pid $treePids），$port 尚未监听；只等待，不重复拉起。"
-        return 'running'
-    }
-    $qqArgs = if ($config.qq.startArguments) { @($config.qq.startArguments) } else { @() }
-    $qqLog = if ($config.qq.startLogPath) { [string]$config.qq.startLogPath } else { '' }
-    Write-Log INFO "  启动 SnowLuma：$($config.qq.startCommand) $($qqArgs -join ' ')"
-    Start-ScriptCommand -Command ([string]$config.qq.startCommand) -Arguments $qqArgs -WorkingDirectory ([string]$config.qq.startWorkingDirectory) -LogPath $qqLog
-    return 'launched'
-}
+# 拉起与等待分开写：面板（node 冷启动）较慢，由各自阶段内的 Wait-ComponentReady 负责等待，
+# 本函数只负责「未监听才发起」。
 
 function Start-ConsoleIfNeeded {
     if ($SkipConsole) { return 'skipped' }
@@ -472,10 +385,10 @@ $ProxyHealthUrl = "http://127.0.0.1:$ProxyPort/health"
 $ReadyTimeoutMs = if ($config.engineControl -and $config.engineControl.readyTimeoutMs) { [int]$config.engineControl.readyTimeoutMs } else { 600000 }
 
 Write-Log INFO ''
-Write-Log INFO '=== start-dsh: 看护层 -> 引擎 -> TTS -> proxy -> SnowLuma/QQ -> bridge/AstrBot -> console -> Harness ==='
+Write-Log INFO '=== start-dsh: 看护层 -> 引擎 -> TTS -> proxy -> OneBot 协议端 -> bridge/AstrBot -> console -> Harness ==='
 Write-Log INFO "  后端：$BaseUrl  模型：$Model"
 Write-Log INFO "  配置：$ConfigPath"
-$modeText = if ($ConnectTraffic) { '接流量（基础设施 + SnowLuma/QQ 客户端 + bridge/AstrBot + Harness）' } else { '仅基础设施（默认，不接 QQ 流量）' }
+$modeText = if ($ConnectTraffic) { '接流量（基础设施 + OneBot 协议端 + bridge/AstrBot + Harness）' } else { '仅基础设施（默认，不接 QQ 流量）' }
 Write-Log INFO "  模式：$modeText"
 
 # 只读自检：只探测、只打印计划，不创建任何进程、不注册计划任务、不改任何标记。
@@ -521,17 +434,14 @@ if ($DryRun) {
     Write-Log INFO ("  [4/9] persona proxy({0})：pid={1} HTTP={2}；{3}" -f $ProxyPort, $proxyPid, $proxyStatus, $proxyPlan)
 
     if (-not $ConnectTraffic) {
-        Write-Log INFO '  [5/9] SnowLuma / QQ 客户端：跳过（默认不接流量，需要时加 -ConnectTraffic）。'
+        Write-Log INFO '  [5/9] OneBot 协议端：跳过（默认不接流量，需要时加 -ConnectTraffic）。'
     }
     else {
         Assert-BridgeModeReady
-        $qqPort = if ($config.qq -and $config.qq.healthPort) { [int]$config.qq.healthPort } else { 3001 }
+        $qqPort = if ($config.qq -and $config.qq.wsPort) { [int]$config.qq.wsPort } else { 3001 }
         $qqPid = Get-PortStatus $qqPort
-        $qqPlan = if ($qqPid -ne 0 -and (Get-PortStatus 3000) -ne 0) { '3000/3001 已监听，跳过等待' } else { '未就绪 -> 将通过 SnowLuma 启动链拉起并等待 3000/3001' }
-        $qqClientPlan = if (Test-QqClientRunning) { 'QQ 客户端已在运行，跳过拉起' }
-                        elseif (Test-Path -LiteralPath $QqClientPath) { "未运行 -> 将拉起 $QqClientPath" }
-                        else { "未运行且找不到 $QqClientPath（将记警告）" }
-        Write-Log INFO ("  [5/9] SnowLuma({0})：pid={1}；{2}；QQ：{3}" -f $qqPort, $qqPid, $qqPlan, $qqClientPlan)
+        $qqPlan = if ($qqPid -ne 0 -and (Get-PortStatus 3000) -ne 0) { '3000/3001 已监听，跳过等待' } else { '未就绪 -> 只等待（协议端需自备，脚本不拉起）' }
+        Write-Log INFO ("  [5/9] OneBot 协议端({0})：pid={1}；{2}" -f $qqPort, $qqPid, $qqPlan)
     }
 
     if (-not $ConnectTraffic) {
@@ -813,60 +723,26 @@ else {
     }
 }
 
-# 5. SnowLuma（QQ 客户端内注入 + OneBot WS 3001）
+# 5. 外部 OneBot 协议端（需自备，脚本只探测 3000/3001）
 Write-Log INFO ''
-Write-Log INFO '[5/9] SnowLuma（OneBot WS 3001）+ QQ 客户端（注入宿主）'
+Write-Log INFO '[5/9] 外部 OneBot 协议端（3000/3001，需自备）'
 if (-not $ConnectTraffic) {
     Write-Log INFO '  未指定 -ConnectTraffic：跳过（默认只起基础设施，不接 QQ 流量）。'
-    Add-Skipped 'QQ/SnowLuma' '未指定 -ConnectTraffic'
-}
-elseif (-not ($config.qq -and $config.qq.startCommand)) {
-    Fail 5 '【缺少配置】qq.startCommand 为空，无法启动 SnowLuma（3001）。'
+    Add-Skipped 'OneBot 协议端' '未指定 -ConnectTraffic'
 }
 else {
-    $qqPort = if ($config.qq.healthPort) { [int]$config.qq.healthPort } else { 3001 }
-    $qqTimeout = if ($config.qq.readyTimeoutMs) { [int]$config.qq.readyTimeoutMs } else { 60000 }
-    $qqClientState = if (Test-QqClientRunning) { 'running' } else { 'not-running' }
-    if ((Get-PortStatus $qqPort) -ne 0 -and (Get-PortStatus 3000) -ne 0 -and $qqClientState -eq 'running') {
-        Write-Log INFO "  SnowLuma 已就绪（3000/3001 已监听），QQ 客户端已在运行，跳过拉起与等待。"
+    $qqPort = if ($config.qq -and $config.qq.wsPort) { [int]$config.qq.wsPort } else { 3001 }
+    $qqTimeout = if ($config.qq -and $config.qq.readyTimeoutMs) { [int]$config.qq.readyTimeoutMs } else { 60000 }
+    if ((Get-PortStatus $qqPort) -ne 0 -and (Get-PortStatus 3000) -ne 0) {
+        Write-Log INFO '  OneBot 协议端 已就绪（3000/3001 已监听），跳过等待。'
     }
     else {
-        # 先起 SnowLuma（注入方），再确保 QQ 宿主在跑；SnowLuma 会自行发现 QQ.exe 并注入白名单账号。
-        if ((Get-PortStatus $qqPort) -eq 0) {
-            try { [void](Start-SnowLumaIfNeeded) }
-            catch { Write-Log WARN "  拉起 SnowLuma 失败：$($_.Exception.Message)"; Set-NotReady 'QQ/SnowLuma' -Warning -Reason ("拉起失败：" + $_.Exception.Message) }
-        }
-        if ($qqClientState -ne 'running') {
-            try {
-                $qqClientState = Start-QqClientIfNeeded
-                if ($qqClientState -eq 'running') {
-                    Write-Log INFO '  QQ 客户端已在运行，跳过拉起。'
-                }
-                elseif ($qqClientState -eq 'missing') {
-                    Write-Log WARN "  找不到 QQ 客户端：$QqClientPath（没有注入宿主，3000/3001 不会监听）"
-                    Set-NotReady 'QQ 客户端' -Warning -Reason "未安装或路径不存在：$QqClientPath"
-                }
-                else {
-                    Write-Log INFO '  QQ 客户端已拉起（SnowLuma 会自动发现并注入白名单账号）。'
-                }
-            }
-            catch {
-                $qqClientState = 'launch-failed'
-                Write-Log WARN "  拉起 QQ 客户端失败：$($_.Exception.Message)"
-                Set-NotReady 'QQ 客户端' -Warning -Reason ("拉起失败：" + $_.Exception.Message)
-            }
-        }
-        if ($qqClientState -in @('running', 'launched')) {
-            # 就绪 = 3000 + 3001 都在监听 + SnowLuma WebUI 5099 应答。
-            # 等不到 = QQ 起来了但白名单账号没登录（用户侧状态），记为警告项：写清原因，不影响退出码。
-            if (-not (Wait-QqAndSnowLumaReady -TimeoutMs $qqTimeout)) {
-                $reason = "$([int]($qqTimeout / 1000)) 秒内 3000/3001 未就绪：QQ 客户端已在运行，但白名单账号（$((Get-WhitelistUins) -join ',')）可能未登录，SnowLuma 未完成注入"
-                Write-Log WARN "  $reason。超时只影响 QQ/SnowLuma，其余组件继续。SnowLuma 日志：$($config.qq.startLogPath)"
-                Set-NotReady 'QQ/SnowLuma' -Warning -Reason $reason
-            }
-        }
-        else {
-            Write-Log WARN '  QQ 客户端不可用（缺失或拉起失败），跳过 3000/3001 等待；其余组件继续。'
+        # 就绪 = 3000 + 3001 都在监听。协议端由用户自行启动，脚本只等待，不代为拉起。
+        # 等不到属于用户侧状态，记为警告项：写清原因，不影响退出码。
+        if (-not (Wait-OneBotEndpointReady -TimeoutMs $qqTimeout)) {
+            $reason = "$([int]($qqTimeout / 1000)) 秒内 3000/3001 未就绪：请确认外部 OneBot 协议端已启动并登录"
+            Write-Log WARN "  $reason。超时只影响 OneBot 协议端，其余组件继续。"
+            Set-NotReady 'OneBot 协议端' -Warning -Reason $reason
         }
     }
 }
@@ -1115,5 +991,5 @@ if (Test-Path -LiteralPath $checker) {
 }
 
 Write-Log INFO ''
-# 只有核心项失败才返回 1；警告项（QQ/SnowLuma、插件 WS、Harness 宿主）与跳过项不污染退出码。
+# 只有核心项失败才返回 1；警告项（OneBot 协议端、插件 WS、Harness 宿主）与跳过项不污染退出码。
 if ($script:Failures.Count -gt 0) { exit 1 }

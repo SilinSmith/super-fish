@@ -1,6 +1,6 @@
 # 配置项与需要自己填的内容
 
-配置分四层：**上游配置**（AstrBot / SnowLuma / DSH）、**本仓库示例配置**、**私有数据文件**、**环境变量**。仓库只提供脱敏示例，真实值一律自备。
+配置分四层：**上游配置**（AstrBot / OneBot 协议端 / DSH）、**本仓库示例配置**、**私有数据文件**、**环境变量**。仓库只提供脱敏示例，真实值一律自备。
 
 ## 1. 上游配置（不在本仓库）
 
@@ -8,7 +8,7 @@
 |---|---|
 | `ASTRBOT_DATA/cmd_config.json` | AstrBot 的 provider（`base_url` 指向你的模型服务、`api_key`、模型名）、aiocqhttp 平台（监听 6199）、WebUI 端口 6299、登录密码。**含密码哈希与 JWT secret，绝不要提交** |
 | `ASTRBOT_DATA/data/plugins/xzy/` | 放置本仓库的 `astrbot-plugin/xzy/`（整目录复制，保留目录名 `xzy`） |
-| `SNOWLUMA_ROOT/config/onebot_<uin>.json` | OneBot HTTP 3000 / WS 3001、access token、上报格式 |
+| 你的 OneBot 协议端配置（需自备） | OneBot HTTP 3000 / WS 3001、上报格式；具体文件名与格式由所选协议端决定，本仓库不提供 |
 | DSH profile `cordis.patch.yml` | 见 `config-examples/cordis.patch.example.yml` |
 
 AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDirectory` 必须是实例目录（例如 `...\inst`），不是 venv 根。
@@ -72,7 +72,7 @@ AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDir
 示例：[config-examples/llm-backend.example.json](../config-examples/llm-backend.example.json)。
 
 必填：`baseUrl`（模型服务 `/v1`）、`model`、`apiKey`（本地服务通常空）、
-`engineControl.*`（如果你希望 proxy 能拉起/停止引擎）、`qq.*`（SnowLuma 路径与启动命令）。
+`engineControl.*`（如果你希望 proxy 能拉起/停止引擎）、`qq.*`（OneBot 协议端的 3000/3001 端口与就绪超时）。
 
 `engineControl.mode=external` 表示引擎由外部脚本管理，proxy 只探测健康。
 
@@ -94,10 +94,8 @@ AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDir
 | 变量 | 作用 | 默认 |
 |---|---|---|
 | `QQ_SELF_ID` | 机器人自己的 QQ（bridge 丢弃回声、识别自撤回） | `10001` |
-| `QQ_CUTOVER_DIR` | bridge 工作目录（模式/日志/pid） | 脚本所在目录 |
-| `SNOWLUMA_ADDON` / `SNOWLUMA_DLL` | 注入用的原生模块路径 | `Y:/SnowLuma/native/...` |
-| `QQ_USERDATA_ROOT` | QQ 用户数据根（注入脚本兜底查找） | `Y:/Documents/Tencent Files` |
-| `SNOWLUMA_HOOK_AUTOLOAD_UINS` | 允许注入的 QQ 号（逗号分隔） | `10001` |
+| `QQ_CUTOVER_DIR` | bridge 工作目录（模式/日志） | 脚本所在目录 |
+| `QQ_CONSOLE_ONEBOT_LOG_DIR` | 控制台读取外部协议端日志的目录（可选，留空则不展示） | 空 |
 | `QQ_CONSOLE_PORT` | 控制台端口 | `1242` |
 | `QQ_DSH_ROOT` | 控制台读日志/状态的 DSH 根 | `Y:\dsh` |
 | `XZY_PERSONA_DIR` | AstrBot 人格目录 | `E:\Bonsai\...\xzy\persona` |
@@ -118,7 +116,7 @@ AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDir
 
 | 文件 | 常量 / 位置 | 说明 |
 |---|---|---|
-| `orchestration/start-dsh.ps1` | `$Root`、`$PersonaRoot`、`$WorkDir`、`$QqClientPath` | DSH 部署根、persona 根、日志工作目录、QQ.exe 路径 |
+| `orchestration/start-dsh.ps1` | `$Root`、`$PersonaRoot`、`$WorkDir` | DSH 部署根、persona 根、日志工作目录 |
 | `orchestration/start-bot.ps1` | `$Root`、`$LogPath`、`$script:PluginLog`、`$script:ModelId` | 部署根、启动日志、旧插件日志、日志里展示的模型名 |
 | `orchestration/bot-child-watchdog.ps1` | `$Components` 里的 `filePath` / `arguments` / `cwd` / `outLog` | venv python、`bridge.py`、AstrBot 实例目录（必须是含 `.astrbot` 的目录） |
 | `orchestration/stop-dsh.ps1` | `$WatchdogScripts`、`$Root\home\...` | 控制台/日志监看看护脚本的位置；不存在会跳过 |
@@ -127,4 +125,6 @@ AstrBot 的根目录判定是 `cwd + .astrbot`，所以启动时的 `-WorkingDir
 | `console/watchdog.ps1` | `$server`、`$log` | 控制台入口与日志路径 |
 
 日志目录（`$WorkDir`）默认是 `<Root>\2026-11-10\qqbot-ninfer-bridge\work`，这是历史命名；换目录时同步改 `start-bot.ps1` 的 `$LogPath` 和 VBS 里的 `logPath`。
+
+外部 OneBot 协议端不在编排脚本的拉起范围，因此不需要在这里配置它的安装路径或启动命令；只需保证 3000/3001 可用。
 

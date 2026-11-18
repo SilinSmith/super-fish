@@ -1,4 +1,4 @@
-# 只重启 dsh-onebot 宿主（DeepSeek Harness），不碰 SnowLuma(3001)、引擎(8094)、
+﻿# 只重启 dsh-onebot 宿主（DeepSeek Harness），不碰 OneBot 协议端(3001)、引擎(8094)、
 # ComfyUI(8188)、persona proxy(1240)、qq-console(1242)。
 # 流程：写 watchdog pause 标记 -> 停 watchdog -> 杀宿主进程树 -> 清标记 ->
 #       走 start-dsh.ps1（幂等，只起基础设施）-> 本脚本自己经 hidden-launch 拉起 harness-watchdog。

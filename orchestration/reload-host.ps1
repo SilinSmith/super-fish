@@ -1,4 +1,4 @@
-# reload-host.ps1 -- 受控重载宿主（唯一推荐姿势）。
+﻿# reload-host.ps1 -- 受控重载宿主（唯一推荐姿势）。
 #
 # 为什么需要它：直接 Stop-Process 杀宿主会被 harness-watchdog 当成崩溃，进入 30/60/120/300 秒退避，
 # 用户侧就是几分钟不回话；而从终端 Start-Process 起的宿主会在命令结束时被作业回收
@@ -135,7 +135,7 @@ try {
     # 标记必须清掉：否则接下来拉起的守护会立刻退出。
     Remove-Item -LiteralPath $pauseMarker -Force -ErrorAction SilentlyContinue
 
-    # === 2. 只结束宿主主进程与它的子进程（不碰 proxy / console / 引擎 / SnowLuma）===
+    # === 2. 只结束宿主主进程与它的子进程（不碰 proxy / console / 引擎 / OneBot 协议端）===
     $offset = Get-PluginLogOffset
     if ($oldProcs.Count -gt 0) {
         if ($oldPid) { Stop-Process -Id $oldPid -Force -ErrorAction SilentlyContinue }

@@ -180,7 +180,7 @@ export function createShadow({ ctx, registry, connection, log, createUserMessage
 
     async function queryHistory(batch, selfId) {
         // 样例 batch 的 message_id 是编的（900001/900002），打真实 API 只会
-        // 在 SnowLuma 里留下 get_group_msg_history message_id=900002 这种脏请求。
+        // 在 OneBot 协议端 里留下 get_group_msg_history message_id=900002 这种脏请求。
         if (batch.sample === true)
             return { ok: false, error: 'sample: 回放不访问真实历史接口' };
         if (batch.tailMessageId === null || batch.tailMessageId === undefined)

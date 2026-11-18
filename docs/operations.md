@@ -6,10 +6,10 @@
 # 仅基础设施：引擎 8094 → TTS 5000（可选）→ proxy 1240 → 控制台 1242
 .\orchestration\start-bot.ps1
 
-# 接 QQ 流量：额外 SnowLuma 3001 + QQ 客户端 → bridge → AstrBot 6199/6299 → Harness（可选）
+# 接 QQ 流量：外部 OneBot 协议端 3000/3001（需先自行启动）→ bridge → AstrBot 6199/6299 → Harness（可选）
 .\orchestration\start-bot.ps1 -ConnectTraffic
 
-# 完整 9 步启动（含引擎恢复守护、QQ 注入等待）
+# 完整 9 步启动（含引擎恢复守护、外部协议端就绪探测）
 .\orchestration\start-dsh.ps1 -ConnectTraffic
 
 # 只看计划与就绪状态
@@ -21,12 +21,13 @@
 
 - 启动是**幂等**的：逐项真实探测，已就绪就跳过。
 - 退出码 `0` 表示全部就绪；`10` 表示有组件未就绪（fail-closed）。
+- 外部 OneBot 协议端需先自行启动；它未就绪只记警告，不改变退出码，也不在 `stop-dsh.ps1` 的关停范围内。
 - 双击 `orchestration/start-dsh.vbs` 等价于「仅基础设施」，不会接 QQ 流量。
 
 ## 2. 启动后自检
 
-1. `window-check.ps1`：统计本轮拉起进程的可视窗口数，非零会告警并打印进程名/PID/命令行。正常应为 0。
-2. 端口：8094、1240、1242；接流量后加 3000、3001、5099、6199、6299。
+1. `window-check.ps1`：统计本轮拉起进程的可视窗口数，非零会告警并打印进程名与命令行。正常应为 0。
+2. 端口：8094、1240、1242；接流量后加 3000、3001、6199、6299。
 3. AstrBot 插件列表里 `xzy` 为启用态；日志出现 `WS 已连接`。
 4. `bridge-mode.json` 不是 `old`，且目标群在 `group_ids` 里。
 5. 控制台 1242 打开后，各卡片状态为 healthy。

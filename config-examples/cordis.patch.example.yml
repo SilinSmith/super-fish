@@ -5,17 +5,17 @@
 # 不要整份覆盖：profile 里还有模型、主题、权限等其它配置。
 # 这里的账号、路径、token 全是占位，按实际改。
 
-# 1) 官方 QQ 机器人通道与 SnowLuma 链路重复，停用，避免两套人设/两条连接互相打架。
+# 1) 官方 QQ 机器人通道与 OneBot 协议端 链路重复，停用，避免两套人设/两条连接互相打架。
 - id: im-qqbot
   disabled: true
 
-# 2) 旧链路：dsh-onebot 主动连接 SnowLuma 的 OneBot 11 WS。
+# 2) 旧链路：dsh-onebot 主动连接 OneBot 协议端 的 OneBot 11 WS。
 - id: dsh-onebot
   disabled: true           # 当前主链路是 AstrBot；旧链路要启用时改成 false
   config:
     mode: forward
     url: ws://127.0.0.1:3001
-    accessToken: ""        # 与 SnowLuma 的 OneBot 配置一致
+    accessToken: ""        # 与 OneBot 协议端 的 OneBot 配置一致
     botQQ: "10001"
     adminUsers:
       - "10000"

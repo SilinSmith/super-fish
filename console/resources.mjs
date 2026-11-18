@@ -119,7 +119,7 @@ async function collect() {
         'harness-process': usage([...harnessPids, ...hostPids]),
         'proxy-port': usage([portPid(1240)]),
         'engine-port': usage([portPid(8094)]),
-        'snowluma-port': usage([portPid(3001)]),
+        'onebot-port': usage([portPid(3001)]),
         'console-port': usage([portPid(1242)]),
         'comfyui-port': usage([portPid(8188)]),
         'webui': usage([portPid(6299), portPid(6199)]),

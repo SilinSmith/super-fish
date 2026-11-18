@@ -1,4 +1,4 @@
-# 窗口自检：统计由本项目拉起的进程里，有多少个拥有“可见的控制台窗口”。
+﻿# 窗口自检：统计由本项目拉起的进程里，有多少个拥有“可见的控制台窗口”。
 # 只读，不改任何进程；输出 JSON（stdout），供 start-dsh.ps1 与 WebUI 状态页使用。
 #
 # 判定方式（不是看代码推断）：
@@ -6,7 +6,7 @@
 #   2) GetClassName 识别 ConsoleWindowClass / CASCADIA_HOSTING_WINDOW_CLASS / PseudoConsoleWindow；
 #   3) IsWindowVisible 判断是否真的可见；
 #   4) 经典控制台窗口属主是 conhost.exe，按 ParentProcessId 归到真正的目标进程；
-#   5) 目标进程用命令行特征匹配（SnowLuma / proxy / console / watch-r6 / 引擎）。
+#   5) 目标进程用命令行特征匹配（proxy / console / watch-r6 / 引擎）。外部 OneBot 协议端不纳入。
 # Harness 是 GUI 程序，本身有正常窗口，只把控制台类窗口算违规。
 
 param(
@@ -47,7 +47,6 @@ $CONSOLE_HOSTS = @('conhost.exe', 'OpenConsole.exe', 'WindowsTerminal.exe')
 # 核心进程的启动包装链（cmd/powershell/wscript/pythonw）单独按“祖先”归到同一目标，
 # 这样既不会把日志路径里带 ninfer 字样的包装进程误标成引擎，也不会漏掉包装进程可能弹出的控制台窗口。
 $TARGETS = @(
-    @{ name = 'SnowLuma'; exe = '^node\.exe$'; pattern = 'SnowLuma[\\/]index\.mjs'; expectGui = $false },
     @{ name = 'persona proxy'; exe = '^node\.exe$'; pattern = 'qq-persona[\\/]proxy\.mjs'; expectGui = $false },
     @{ name = 'console'; exe = '^node\.exe$'; pattern = 'qq-console[\\/]server\.mjs'; expectGui = $false },
     @{ name = 'r6 watcher'; exe = '^node\.exe$'; pattern = 'watch-r6\.mjs'; expectGui = $false },

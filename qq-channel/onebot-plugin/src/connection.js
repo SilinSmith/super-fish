@@ -1,5 +1,5 @@
 /**
- * ① 接入层：连 SnowLuma 的 OneBot 11 正向 WS，归一事件，负责重连。
+ * ① 接入层：连 OneBot 协议端 的 OneBot 11 正向 WS，归一事件，负责重连。
  *
  * S1 仍然只读：不提供任何发送方法；只开放只读 action（get_msg / 历史 / 资料）。
  * 任何 send_* / set_* / delete_* 在这里就被拒绝，杜绝误发到真实群。

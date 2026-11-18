@@ -1,8 +1,8 @@
-"""OneBot v11 双向桥：SnowLuma 正向 WS（实现侧）↔ AstrBot 反连 WS（客户端侧）。
+"""OneBot v11 双向桥：OneBot 协议端 正向 WS（实现侧）↔ AstrBot 反连 WS（客户端侧）。
 
 数据流：
-  SnowLuma(3001) --event--> bridge --event--> AstrBot(6199/ws)
-  AstrBot(6199/ws) --action--> bridge --action--> SnowLuma(3001) --response--> AstrBot
+  OneBot 协议端(3001) --event--> bridge --event--> AstrBot(6199/ws)
+  AstrBot(6199/ws) --action--> bridge --action--> OneBot 协议端(3001) --response--> AstrBot
 
 按 bridge-mode.json 过滤入站事件（每条事件读一次，mtime 变了才重读）：
   old        不转发任何事件（桥不应在 old 模式下运行）
@@ -18,8 +18,8 @@
 
 用法（默认值即现网）：
   python bridge.py
-  python bridge.py --snowluma ws://127.0.0.1:3001 --astrbot ws://127.0.0.1:6199/ws
-离线联调时把 --snowluma 指到假服务器即可，不会连真实 3001。
+  python bridge.py --upstream ws://127.0.0.1:3001 --astrbot ws://127.0.0.1:6199/ws
+离线联调时把 --upstream 指到假服务器即可，不会连真实 3001。
 """
 from __future__ import annotations
 
@@ -72,14 +72,14 @@ def wall() -> str:
 
 class Bridge:
     def __init__(self, args: argparse.Namespace) -> None:
-        self.snow_url = args.snowluma
+        self.upstream_url = args.upstream
         self.ab_url = args.astrbot
         self.mode_file = Path(args.mode_file)
         self.log_path = Path(args.log)
         self.pid_path = Path(args.pid)
         self.mode: dict = {"mode": "old", "group_id": ""}
         self.mode_mtime = 0
-        self.snow_ws: aiohttp.ClientWebSocketResponse | None = None
+        self.upstream_ws: aiohttp.ClientWebSocketResponse | None = None
         self.ab_ws: aiohttp.ClientWebSocketResponse | None = None
         self.pending: dict[str, asyncio.Future] = {}
         self.stop = asyncio.Event()
@@ -344,19 +344,19 @@ class Bridge:
 
     async def relay_action(self, frame: dict) -> dict:
         echo = frame.get("echo")
-        if self.snow_ws is None or self.snow_ws.closed:
+        if self.upstream_ws is None or self.upstream_ws.closed:
             return {"status": "failed", "retcode": 100, "data": None, "echo": echo,
-                    "wording": "snowluma not connected"}
+                    "wording": "onebot not connected"}
         loop = asyncio.get_running_loop()
         fut: asyncio.Future = loop.create_future()
         key = str(echo)
         self.pending[key] = fut
         try:
-            await self.snow_ws.send_json(frame)
+            await self.upstream_ws.send_json(frame)
             resp = await asyncio.wait_for(fut, timeout=40)
         except asyncio.TimeoutError:
             resp = {"status": "failed", "retcode": 120, "data": None, "echo": echo,
-                    "wording": "snowluma action timeout"}
+                    "wording": "onebot action timeout"}
         except Exception as exc:  # noqa: BLE001
             resp = {"status": "failed", "retcode": 130, "data": None, "echo": echo,
                     "wording": f"{type(exc).__name__}: {exc}"}
@@ -370,14 +370,14 @@ class Bridge:
         return resp
 
     # ---------------------------------------------------------------- loops
-    async def snow_loop(self, session: aiohttp.ClientSession) -> None:
+    async def upstream_loop(self, session: aiohttp.ClientSession) -> None:
         while not self.stop.is_set():
             try:
-                async with session.ws_connect(self.snow_url, heartbeat=30, max_msg_size=0) as ws:
-                    self.snow_ws = ws
+                async with session.ws_connect(self.upstream_url, heartbeat=30, max_msg_size=0) as ws:
+                    self.upstream_ws = ws
                     # 启动到接上 3001 之间的入站 bridge 看不到（进程还没连），
                     # 这里把窗口长度写进日志，避免「空窗内丢了什么」完全不可追溯。
-                    self.log("snow-connected", url=self.snow_url,
+                    self.log("upstream-connected", url=self.upstream_url,
                              startupGapSec=round(time.time() - self.started_at, 1))
                     async for msg in ws:
                         if msg.type != aiohttp.WSMsgType.TEXT:
@@ -416,9 +416,9 @@ class Bridge:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # noqa: BLE001
-                self.log("snow-error", error=f"{type(exc).__name__}: {exc}")
+                self.log("upstream-error", error=f"{type(exc).__name__}: {exc}")
             finally:
-                self.snow_ws = None
+                self.upstream_ws = None
             if not self.stop.is_set():
                 await asyncio.sleep(2)
 
@@ -470,11 +470,11 @@ class Bridge:
                 await asyncio.sleep(2)
 
     async def run(self) -> None:
-        self.log("start", snowluma=self.snow_url, astrbot=self.ab_url,
+        self.log("start", onebot=self.upstream_url, astrbot=self.ab_url,
                  mode_file=str(self.mode_file), pid=os.getpid())
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            tasks = [asyncio.create_task(self.snow_loop(session)),
+            tasks = [asyncio.create_task(self.upstream_loop(session)),
                      asyncio.create_task(self.ab_loop(session))]
             await self.stop.wait()
             for task in tasks:
@@ -486,7 +486,7 @@ class Bridge:
 def main() -> int:
     global SELF_ID, HOME
     parser = argparse.ArgumentParser()
-    parser.add_argument("--snowluma", default="ws://127.0.0.1:3001")
+    parser.add_argument("--upstream", default="ws://127.0.0.1:3001")
     parser.add_argument("--astrbot", default="ws://127.0.0.1:6199/ws")
     parser.add_argument("--self-id", default=os.environ.get("QQ_SELF_ID", SELF_ID))
     parser.add_argument("--home", default=os.environ.get("QQ_CUTOVER_DIR", ""))

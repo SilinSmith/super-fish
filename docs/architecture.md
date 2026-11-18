@@ -6,14 +6,16 @@
 
 ```text
 【当前主链路】
-QQ NT ──注入──> SnowLuma ──OneBot 11──> bridge ──过滤──> AstrBot ──> xzy 插件
-                                                             └──> 本地模型 8094
+QQ 账号 ──> OneBot 11 协议端（外部，需自备） ──OneBot 11──> bridge ──过滤──> AstrBot ──> xzy 插件
+                                                                             └──> 本地模型 8094
 
 【旧链路 / 灰度】
-QQ NT ──注入──> SnowLuma ──OneBot 11──> dsh-onebot 插件 ──> persona proxy 1240 ──> 8094
+QQ 账号 ──> OneBot 11 协议端（外部） ──OneBot 11──> dsh-onebot 插件 ──> persona proxy 1240 ──> 8094
 ```
 
 选择 AstrBot 作为主链路的原因：原生 agent 循环、工具注册、会话历史管理、WebUI 都已具备。xzy 只补「原生没有的」：人格只读注入、presence、审计、审校、记忆、媒体工具、防抖与拆条。
+
+协议端是外部依赖：本仓库不包含、也不管理任何具体协议端的安装与运行，只要求它提供 OneBot 11 事件与动作。能力要求与接口契约见 [upstream.md](upstream.md#3-onebot-协议端接口契约)。
 
 ## 2. 部件职责
 
@@ -35,17 +37,18 @@ QQ NT ──注入──> SnowLuma ──OneBot 11──> dsh-onebot 插件 ─�
 
 `bridge/bridge.py` 是一个无状态的 OneBot 事件转发器，只做三件事：
 
-1. 连接 SnowLuma（3001）与 AstrBot（6199/ws），双向转发；
+1. 连接 OneBot 协议端（3001）与 AstrBot（6199/ws），双向转发；
 2. 按 `bridge-mode.json` 过滤入站：`old`（不转发）/ `private` / `one-group` / `groups` / `all`；
-3. 落台账：撤回需要的 `message_id`、入站原始事件、运行日志、pid。
+3. 落台账：撤回需要的 `message_id`、入站原始事件与运行日志。
 
 它**不解析业务语义**，也不重试业务失败；重连由自带循环负责。
 
-### 2.3 QQ 通道
+### 2.3 QQ 通道（我们自研的部分）
 
-- `snowluma-inject.mjs`：通过 SnowLuma 的原生 hook 让指定 QQ 账号以 OneBot 11 形态暴露；默认只注入白名单账号（`SNOWLUMA_HOOK_AUTOLOAD_UINS`）。
 - `qq-channel/onebot-plugin/`：自研 OneBot 插件，走 DSH 宿主，三层配置合并（默认 → 群 → 私信），只做协议接入与策略判定。
 - `qq-channel/platform/`：入站事件归一化层（`【元】{json}` 信封），插件与 proxy 共用，避免各写一套解析。
+
+这两部分只消费 OneBot 11 事件与动作，不依赖任何特定协议端的实现细节。协议端本身需要你自备。
 
 ### 2.4 persona proxy（Harness 侧）
 
@@ -61,7 +64,7 @@ QQ NT ──注入──> SnowLuma ──OneBot 11──> dsh-onebot 插件 ─�
 `orchestration/` 只做「探测 → 拉起 → 复核」：
 
 - `start-bot.ps1`：幂等入口，按契约顺序探测；`-ConnectTraffic` 才进 QQ 链路。
-- `start-dsh.ps1`：更完整的 9 步启动，含引擎恢复守护与 QQ 客户端注入等待。
+- `start-dsh.ps1`：更完整的 9 步启动，含引擎恢复守护与外部协议端就绪探测。
 - `bot-child-watchdog.ps1`：看守 AstrBot 与 bridge，消失即退避拉起。
 - `harness-watchdog.ps1`：看守 Harness 宿主，并在启动前清理失效的 `dsh-auth-*` cookie。
 - `engine-restore-watchdog.ps1`：引擎掉线恢复（只读 `engine.stop` 标记，绝不主动写）。
@@ -91,5 +94,6 @@ QQ NT ──注入──> SnowLuma ──OneBot 11──> dsh-onebot 插件 ─�
 | judge 超时 | 按配置降级为「不接话」，不阻塞主流程 |
 | 二审不可用 | `review.failOpen=true` 时放行，但硬规则仍先执行 |
 | bridge 断线 | 2 秒重连；期间消息不补发（避免陈旧回复） |
+| 外部协议端未就绪 | 只记警告，不阻塞其余组件；退出码不受影响 |
 | 控制台配置非法 | 拒绝保存并保留上一份有效配置 |
 | 插件被重载 | `terminate` 回收后台任务，避免 tick 重复 |

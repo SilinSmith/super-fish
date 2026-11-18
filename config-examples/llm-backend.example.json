@@ -43,13 +43,9 @@
     "nodePath": ""
   },
   "qq": {
-    "startCommand": "node.exe",
-    "startArguments": ["<SNOWLUMA_ROOT>\\index.mjs"],
-    "startWorkingDirectory": "<SNOWLUMA_ROOT>",
-    "startLogPath": "<LOG_ROOT>\\snowluma.out.log",
-    "healthPort": 3001,
+    "httpPort": 3000,
+    "wsPort": 3001,
     "readyTimeoutMs": 60000,
-    "harnessCommand": "<DSH_ROOT>\\DeepSeek Harness.exe",
-    "stopCommand": ""
+    "harnessCommand": "<DSH_ROOT>\\DeepSeek Harness.exe"
   }
 }

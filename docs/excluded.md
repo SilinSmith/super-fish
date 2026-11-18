@@ -31,11 +31,10 @@
 按发布口径，以下上游的源码或发行物**一律不进来**：
 
 - AstrBot（含我们打过补丁的 `site-packages` 副本；只保留 `patches/` 里的补丁器与登记表）
-- SnowLuma（含原生 `.node/.dll`）
-- QQ NT
+- OneBot 协议端（含其原生模块与发行物）
+- QQ 客户端
 - DeepSeek Harness 宿主与 `dsh-onebot-qq` 插件
-- NapCat（本方案未使用）
-- 任何从上游复制的表情目录（`faces.json` 属于 SnowLuma 表情目录的衍生物，未纳入；缺失时插件自动降级为不发表情，生成方法见 [faces.md](faces.md)）
+- 任何从上游复制或衍生的表情目录（`faces.json` 属于协议端落盘表情目录的衍生物，未纳入；缺失时插件自动降级为不发表情，生成方法见 [faces.md](faces.md)）
 
 需要改上游的地方，用 `astrbot-plugin/patches/registry.md` 的逐处说明 + `apply.py` 记录，不整份拷贝。
 
@@ -45,7 +44,7 @@
 - `notebook.json`、`diary.jsonl`（记忆/日记，可先建空文件）
 - `bili-cookies.json`（如果要用 B 站功能）
 - `xzy-config.json`、`bridge-mode.json`、`llm-backend.json`、`onebot-plugin/config.json`（从 `config-examples/` 复制后改）
-- SnowLuma 的 `config/onebot_<uin>.json`
+- 你的 OneBot 协议端配置（由所选协议端决定，本仓库不提供）
 - 模型服务的地址、模型名与鉴权
 
 ## 5. 核对方式

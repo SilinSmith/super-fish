@@ -3,7 +3,7 @@
 # 顺序（不能调换）：
 #   [1] 自愈层：先落停机标记，再注销计划任务，最后结束看护/探针/reload watcher。
 #       先停自愈层，否则停业务进程时会立刻被 watchdog 重新拉起。
-#   [2] 业务层：按依赖关系结束进程树（Harness -> bridge -> AstrBot -> SnowLuma -> console
+#   [2] 业务层：按依赖关系结束进程树（Harness -> bridge -> AstrBot -> console
 #       -> proxy -> TTS -> ninfer 启动器/引擎）。先子后父，避免留下孤儿。
 #   [3] 双向复核：逐端口打印是否仍 LISTEN；逐组件按规则重扫，打印每个 pid 是否消失。
 #   [4] 残留扫描：枚举 node/python/pythonw/powershell/wscript/cmd，凡命令行指向本项目目录的
@@ -11,10 +11,8 @@
 #
 # 幂等：本来就没运行的项直接打印「未运行」，不报错、不对不存在的 pid 发任何信号。
 #
-# QQ 客户端不在关停范围：本脚本不结束 QQ.exe / QQEX.exe（即使它们出现在某个进程树里也跳过），
-# 不计入残留、不当作问题项。SnowLuma 注入侧（node 服务 + 3000/3001/5099）仍按业务链关停；
-# 不会为了关端口去硬杀 QQ 宿主。若 node 服务在停完后仍在/端口仍被占用，只如实打印现状，
-# 由收尾摘要说明「QQ 保留，注入侧是什么状态」。
+# 外部 OneBot 协议端与 QQ 客户端都不在关停范围：它们由用户自行管理，
+# 本脚本不结束其进程，只在收尾摘要里如实打印 3000/3001 的占用情况。
 #
 # 用法：
 #   powershell -NoProfile -ExecutionPolicy Bypass -File Y:\dsh\stop-dsh.ps1
@@ -213,7 +211,6 @@ $Groups = @(
     [pscustomobject]@{ Name = 'DeepSeek Harness'; Exe = '^DeepSeek Harness\.exe$'; Cl = ''; Ports = @() },
     [pscustomobject]@{ Name = 'bridge'; Exe = '^python(w)?\.exe$'; Cl = 'qq-cutover[\\/]bridge\.py'; Ports = @() },
     [pscustomobject]@{ Name = 'AstrBot 宿主/服务'; Exe = '^python(w)?\.exe$'; Cl = 'astrbot'; Ports = @(6199, 6299) },
-    [pscustomobject]@{ Name = 'SnowLuma'; Exe = '^node\.exe$'; Cl = 'SnowLuma[\\/]index\.mjs'; Ports = @(3000, 3001, 5099) },
     [pscustomobject]@{ Name = 'qq-console'; Exe = '^node\.exe$'; Cl = 'qq-console[\\/]server\.mjs'; Ports = @(1242) },
     # start-proxy.cmd 是 :run 死循环（node 退出后 2 秒重拉，还每 5 秒起一个 health 检查），
     # 必须先杀掉循环壳，否则只杀 node 会被立刻重启。
@@ -242,7 +239,7 @@ $ScheduledTasks = @(
     @{ Name = 'DSH Sticker Maintenance'; Xml = 'DSH_Sticker_Maintenance.xml' }
 )
 
-$AllPorts = @(1240, 1242, 3000, 3001, 5000, 5099, 6199, 6299, 7861, 8094)
+$AllPorts = @(1240, 1242, 3000, 3001, 5000, 6199, 6299, 7861, 8094)
 
 # ---------------------------------------------------------------- 开始
 
@@ -427,7 +424,6 @@ Write-Log STEP '[4/4] 残留扫描（命令行指向本项目目录的 node/pyth
 
 $ProjectRoots = @(
     'Y:\\dsh',
-    'Y:\\SnowLuma',
     'Y:\\Style-Bert-VITS2-CUDA',
     'E:\\Bonsai\\astrbot-eval',
     'Y:\\workspace\\ninfer'
@@ -469,28 +465,17 @@ if ($DryRun) {
     Write-Log INFO 'DryRun：未发送任何终止信号、未注销任务、未写停机标记。'
 }
 
-# QQ 客户端只陈述「保留」与注入侧现状：不探测 QQ 本身、不结束、不计入残留。
-# 注入侧 = SnowLuma 的 node 服务与 3000/3001/5099；这些仍按业务链关停。
-$snowLeft = @(Get-MatchingProcesses -ExePattern '^node\.exe$' -ClPattern 'SnowLuma[\\/]index\.mjs' -Protected $Protected)
-$injectOwners = @(foreach ($p in @(3000, 3001, 5099)) {
+# 外部 OneBot 协议端与 QQ 客户端只陈述现状：不探测、不结束、不计入残留。
+$onebotOwners = @(foreach ($p in @(3000, 3001)) {
         $o = Get-PortOwner $p
         if ($o -gt 0) { "端口 $p pid=$o" }
     })
-Write-Log INFO 'QQ 客户端：保留（不在关停范围：未结束、不计入残留）'
-if ($snowLeft.Count -gt 0) {
-    $snowPids = (($snowLeft | ForEach-Object { "pid=$($_.ProcessId)" }) -join ', ')
-    if ($DryRun) {
-        Write-Log INFO ("SnowLuma 注入侧：DryRun，当前仍在运行（{0}）；真实执行时会按业务链结束" -f $snowPids)
-    }
-    else {
-        Write-Log WARN ("SnowLuma 注入侧：停完后仍有 node 服务在跑（{0}）-> 不硬杀、不重试，保留现状" -f $snowPids)
-    }
-}
-elseif ($injectOwners.Count -gt 0) {
-    Write-Log WARN ("SnowLuma 注入侧：node 已停，但 {0} 仍被占用 -> 只报告，不硬杀 QQ 宿主" -f ($injectOwners -join '、'))
+Write-Log INFO '外部 OneBot 协议端 / QQ 客户端：保留（不在关停范围：未结束、不计入残留）'
+if ($onebotOwners.Count -gt 0) {
+    Write-Log INFO ("一步提醒：3000/3001 仍被占用（{0}），由你的协议端自行管理。" -f ($onebotOwners -join '、'))
 }
 else {
-    Write-Log INFO 'SnowLuma 注入侧：node 已停，3000/3001/5099 已释放（QQ 内 hook 失去宿主，QQ 保留）。'
+    Write-Log INFO '3000/3001 当前未被占用。'
 }
 
 if ($DryRun) {

@@ -1,6 +1,6 @@
 # 生成 `faces.json`（系统表情 id → 中文名）
 
-插件里的 `faces.py` 需要一个与它同目录的 `faces.json`。这个文件是 **SnowLuma 落盘的 QQ 官方系统表情目录的衍生数据**，会随 QQ 版本变化，所以不随仓库分发；按下面步骤自己生成即可。
+插件里的 `faces.py` 需要一个与它同目录的 `faces.json`。这个文件是 **QQ 官方系统表情目录的衍生数据**，会随 QQ 版本变化，所以不随仓库分发；按下面步骤自己生成即可。
 
 生成后：
 
@@ -10,10 +10,10 @@
 
 ## 1. 数据来源
 
-SnowLuma 会把 QQ 官方系统表情目录落盘到：
+需要一个能落盘 QQ 官方系统表情目录的 OneBot 协议端。常见形态是协议端把目录写到自身数据目录下：
 
 ```
-<SNOWLUMA_ROOT>/data/sys-face-catalog.json
+<PROTOCOL_ROOT>/data/sys-face-catalog.json
 ```
 
 结构（节选）：
@@ -34,7 +34,7 @@ SnowLuma 会把 QQ 官方系统表情目录落盘到：
 }
 ```
 
-如果你的 SnowLuma 版本没有这个文件，先正常启动一次，并使用一次表情相关功能，让它通过 QQ 的 sysface 接口拉取并落盘；仍没有就升级 SnowLuma。
+不同协议端的落盘位置与字段名可能不同。如果你的协议端没有这个文件，先正常启动一次并使用一次表情相关功能，让它通过 QQ 的 sysface 接口拉取并落盘；仍没有就查看该协议端的文档或换一个支持的实现。只要最终能拿到「数字 id + 中文名」的对应关系，就可以按第 2 节生成。
 
 ## 2. 目标格式
 
@@ -43,7 +43,7 @@ SnowLuma 会把 QQ 官方系统表情目录落盘到：
   "meta": {
     "schemaVersion": 1,
     "generated": "2026-11-16",
-    "source": "SnowLuma 落盘的 QQ 官方系统表情目录 <路径>（fetchedAt=<时间戳>）",
+    "source": "协议端落盘的 QQ 官方系统表情目录 <路径>（fetchedAt=<时间戳>）",
     "idSpace": "等于 [CQ:face,id=N] 与 AstrBot Face 组件的 id 字段",
     "nameRule": "取目录里的 qDes 去掉 QQ 的名称前缀 /；非数字 qSid（emoji 字符表情包）不收录；同名 id 只保留首次出现",
     "count": 299
@@ -67,7 +67,7 @@ SnowLuma 会把 QQ 官方系统表情目录落盘到：
 
 ## 3. 生成脚本
 
-把 `<SNOWLUMA_ROOT>` 换成你的实际路径，在仓库根目录运行：
+把 `<PROTOCOL_ROOT>` 换成你的实际路径，在仓库根目录运行：
 
 ```python
 # tools/export_faces.py（示例，不必提交）
@@ -75,7 +75,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-CATALOG = Path(r"<SNOWLUMA_ROOT>/data/sys-face-catalog.json")
+CATALOG = Path(r"<PROTOCOL_ROOT>/data/sys-face-catalog.json")
 TARGET = Path(r"astrbot-plugin/xzy/faces.json")
 
 catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
@@ -97,7 +97,7 @@ out = {
     "meta": {
         "schemaVersion": 1,
         "generated": date.today().isoformat(),
-        "source": f"SnowLuma 落盘的 QQ 官方系统表情目录 {CATALOG}（fetchedAt={catalog.get('fetchedAt')}）",
+        "source": f"协议端落盘的 QQ 官方系统表情目录 {CATALOG}（fetchedAt={catalog.get('fetchedAt')}）",
         "idSpace": "等于 [CQ:face,id=N] 与 AstrBot Face 组件的 id 字段",
         "nameRule": "取目录里的 qDes 去掉 QQ 的名称前缀 /；非数字 qSid（emoji 字符表情包）不收录；同名 id 只保留首次出现",
         "count": len(ordered),

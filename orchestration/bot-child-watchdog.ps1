@@ -5,7 +5,7 @@
 #      而且全链路没有守护；这里用 hidden-launch.ps1（CreateProcess + 隐藏控制台）独立拉起，
 #      与调用者终端解耦。
 #   2) bridge.py 死了没人管，AstrBot 收不到消息。这里按进程存在性看守，消失即按退避拉起；
-#      bridge.py 自带 snow_loop / ab_loop 重连循环（2 秒重试），重启后会自动重连 3001 与 6199。
+#      bridge.py 自带 upstream_loop / ab_loop 重连循环（2 秒重试），重启后会自动重连 3001 与 6199。
 #
 # 单实例：bot-child.watchdog.pid；停机标记：bot-child.watchdog.pause（存在则退出）。
 # 日志：<WorkDir>\bot-child.watchdog.log；状态：<WorkDir>\bot-child.watchdog.state.json。
@@ -49,7 +49,7 @@ function Write-WatchLog {
 
 # 两个组件的启动参数。pattern 用于按命令行识别「是不是同一个服务」。
 # 数组顺序 = 拉起顺序 = start-dsh 的启动顺序（bridge 先、AstrBot 后）。
-# bridge.py 自带 snow_loop / ab_loop 重连循环，先起它不会因为 AstrBot 还没监听而失败。
+# bridge.py 自带 upstream_loop / ab_loop 重连循环，先起它不会因为 AstrBot 还没监听而失败。
 $Components = @(
     [pscustomobject]@{
         name      = 'bridge'

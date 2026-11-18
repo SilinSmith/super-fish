@@ -1,13 +1,10 @@
 """出站「对方正在输入…」：OneBot `set_input_status`。
 
-能力依据（读源码 + 旧栈调用日志，不是假设）：
-- `Y:\\SnowLuma\\index.mjs:13882` 定义 OneBot 动作 `set_input_status`，
-  参数 `user_id` / `event_type`（默认 0），成功返回 `{}`；
-- 实现 `index.mjs:331597` → `SetInputStatus`（OIDB 0xcd4），报文里 `chatType` 恒为 0，
-  且动作参数只有 `user_id` —— 协议层是 C2C 语义，**群聊没有对应能力**，因此只对私聊生效；
-- `event_type` 取值按旧栈 2026-11-14 10:05 的实际调用序列（SnowLuma 日志
-  `[Bridge.Action] set_input_status params=user_id=... event_type=1/0`）：
-  1 = 正在输入、0 = 停止；3 = 正在讲话（`index.mjs:144830` 的入站文案映射）。
+能力依据（协议端实现 + 旧栈调用日志，不是假设）：
+- 协议端提供 OneBot 动作 `set_input_status`，参数 `user_id` / `event_type`（默认 0），
+  成功返回 `{}`；
+- 该动作是 C2C 语义，**群聊没有对应能力**，因此只对私聊生效；
+- `event_type`：1 = 正在输入、0 = 停止；3 = 正在讲话（入站文案映射）。
 
 入站对应事件即 `notice/notify/input_status`，已由 bridge 侧过滤，不会再变空消息。
 

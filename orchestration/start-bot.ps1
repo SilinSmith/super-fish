@@ -1,11 +1,11 @@
-# 机器人栈唯一显式启动入口 —— 只在你手动运行时执行。
+﻿# 机器人栈唯一显式启动入口 —— 只在你手动运行时执行。
 # 已取消所有开机 / 登录 / 空闲 / 定时触发：不跑这个入口，栈不会自己起来；
 # 也不创建 / 启用任何计划任务（两个旧任务保持 0 触发器 + Disabled）。
 #
 # 两种模式：
 #   默认（仅基础设施）：1) ninfer 引擎 8094   2) persona proxy 1240   3) qq-console 1242
 #   接流量（-ConnectTraffic）额外要求：
-#       4) SnowLuma 3001   5) AstrBot 6299/6199   6) DeepSeek Harness 宿主 + dsh-onebot 插件
+#       4) OneBot 协议端 3001（需自备，入口只探测不拉起）   5) AstrBot 6299/6199   6) DeepSeek Harness 宿主 + dsh-onebot 插件
 # 两种模式都会探测 ComfyUI(8188)，但只探测：用户自管，不拉起 / 不重启 / 不结束。
 #
 # 接流量前 start-dsh.ps1 会校验 bridge-mode.json（mode=old 或 one-group 缺 group_id 直接拒绝），
@@ -106,10 +106,10 @@ function Test-Proxy {
     return @{ ok = $false; detail = 'GET http://127.0.0.1:1240/health 非 200 / 未监听' }
 }
 
-function Test-SnowLuma {
+function Test-OneBotEndpoint {
     $wsPort = Get-PortOwner 3001
     if ($wsPort -eq 0) {
-        return @{ ok = $false; detail = '3001 未监听（SnowLuma 未注入 / 白名单 QQ 未登录）' }
+        return @{ ok = $false; detail = '3001 未监听（外部 OneBot 协议端未启动或未登录）' }
     }
     $httpPort = Get-PortOwner 3000
     $extra = if ($httpPort -eq 0) { '；3000 未监听（OneBot HTTP）' } else { '；3000 在监听（OneBot HTTP）' }
@@ -210,18 +210,18 @@ function Assert-BridgeMode {
 
 
 # 顺序即契约顺序。基础设施三个步骤两种模式都必须过；
-# SnowLuma / AstrBot / 宿主只在 -ConnectTraffic 时进入契约（默认不接 QQ 流量）。
+# OneBot 协议端 / AstrBot / 宿主只在 -ConnectTraffic 时进入契约（默认不接 QQ 流量）。
 $infraSteps = @(
     @{ name = 'ninfer 引擎(8094)'; probe = { Test-Engine }; timeoutSec = 600; action = 'engine-control.ps1 -Action restore（supervisor 隐藏拉起）' },
     @{ name = 'persona proxy(1240)'; probe = { Test-Proxy }; timeoutSec = 90; action = 'start-dsh.ps1 内 start-proxy.cmd 看护循环（隐藏链）' },
     @{ name = 'qq-console(1242)'; probe = { Test-Console }; timeoutSec = 60; action = 'start-dsh.ps1 内 qq-console 启动链（隐藏链）' }
 )
 $trafficSteps = @(
-    @{ name = 'SnowLuma(3001)'; probe = { Test-SnowLuma }; timeoutSec = 120; action = 'start-dsh.ps1 内 SnowLuma 启动链（隐藏链）' },
+    @{ name = 'OneBot 协议端(3001)'; probe = { Test-OneBotEndpoint }; timeoutSec = 120; action = '外部依赖：需自行启动，只探测 3000/3001' },
     @{ name = 'AstrBot(6299/6199)'; probe = { Test-AstrBot }; timeoutSec = 120; action = 'bot-child-watchdog.ps1 经 hidden-launch.ps1 -HiddenConsole 拉起 venv python -m astrbot.cli run -p 6299' },
     @{ name = 'DeepSeek Harness + dsh-onebot 插件'; probe = { Test-Host }; timeoutSec = 90; action = 'start-dsh.ps1 内 Harness 宿主 + dsh-onebot 插件（隐藏链）' }
 )
-# 按契约顺序插入：引擎 -> proxy -> SnowLuma -> AstrBot -> console -> 宿主。
+# 按契约顺序插入：引擎 -> proxy -> OneBot 协议端 -> AstrBot -> console -> 宿主。
 $Steps = @($infraSteps[0], $infraSteps[1])
 if ($ConnectTraffic) { $Steps += @($trafficSteps[0], $trafficSteps[1]) }
 $Steps += $infraSteps[2]
@@ -253,7 +253,7 @@ function Wait-Step {
 
 # === 预检：幂等 + DryRun ===
 Say INFO ''
-$modeText = if ($ConnectTraffic) { '接流量（基础设施 + SnowLuma + AstrBot/bridge + Harness）' } else { '仅基础设施（默认，不接 QQ 流量）' }
+$modeText = if ($ConnectTraffic) { '接流量（基础设施 + OneBot 协议端 + AstrBot/bridge + Harness）' } else { '仅基础设施（默认，不接 QQ 流量）' }
 Say INFO ("=== start-bot: 幂等预检（逐项真实探测） | 模式：{0} ===" -f $modeText)
 # 接流量前先验证 bridge-mode.json：不合格就不要动任何组件。
 if ($ConnectTraffic) { Assert-BridgeMode }
@@ -286,7 +286,7 @@ if ($DryRun) {
         Say INFO '[DryRun] 核心组件有缺项时调用 start-dsh.ps1 -FailFast -ConnectTraffic；仅 AstrBot 缺项时不重启其它组件。'
     }
     else {
-        Say INFO '[DryRun] 默认模式不接流量：不会拉起 SnowLuma / AstrBot / bridge / Harness，也不会清任何 pause 标记。'
+        Say INFO '[DryRun] 默认模式不接流量：不会拉起 OneBot 协议端 / AstrBot / bridge / Harness，也不会清任何 pause 标记。'
         Say INFO '[DryRun] 核心组件有缺项时调用 start-dsh.ps1 -FailFast（不带 -ConnectTraffic）。'
     }
     Say INFO '[DryRun] ComfyUI(8188) 由用户自管：只探测，不拉起、不重启、不结束。'
@@ -410,7 +410,7 @@ if ($failures.Count -gt 0) {
 }
 
 if ($ConnectTraffic) {
-    Say PASS '启动完成：引擎 8094 / proxy 1240 / SnowLuma 3001 / AstrBot 6299+6199 / console 1242 / 宿主+dsh-onebot 插件 全部就绪。'
+    Say PASS '启动完成：引擎 8094 / proxy 1240 / OneBot 协议端 3001 / AstrBot 6299+6199 / console 1242 / 宿主+dsh-onebot 插件 全部就绪。'
 }
 else {
     Say PASS '启动完成（仅基础设施）：引擎 8094 / proxy 1240 / console 1242 全部就绪；未接 QQ 流量（需要时加 -ConnectTraffic）。'

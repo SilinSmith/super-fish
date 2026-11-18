@@ -414,7 +414,7 @@ function renderStatus(data, topology) {
             : taskRows.map(item => esc(item.name) + ' = ' + esc(item.state) + '、' + esc(item.triggers) + ' 个触发器').join('；')}
         ${policy?.scheduledTasksCheckedAt ? '（查询于 ' + esc(fmtTime(policy.scheduledTasksCheckedAt)) + '，60 秒内复用）' : ''}。</p>
         <p class="muted">退出码口径：0 = 核心项全就绪（允许警告 / 跳过）；1 = 核心项失败。核心项 = 引擎 8094 / TTS 5000 / proxy 1240 / bridge / AstrBot 6199+6299 / qq-console 1242；
-        QQ·SnowLuma、插件 WS、Harness 宿主未出现、ComfyUI 8188 未就绪都只是警告，不改变退出码。日志里警告/失败分别以 [WARN] / [FAIL] 标出，收尾固定「失败项 / 警告项 / 跳过项」三行。</p></div></div>`;
+        QQ·OneBot 协议端、插件 WS、Harness 宿主未出现、ComfyUI 8188 未就绪都只是警告，不改变退出码。日志里警告/失败分别以 [WARN] / [FAIL] 标出，收尾固定「失败项 / 警告项 / 跳过项」三行。</p></div></div>`;
 
     const winTone = win && win.visibleConsoleCount === 0 ? 'ok' : 'warn';
     const winText = !win ? ''

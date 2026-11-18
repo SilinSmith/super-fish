@@ -5,10 +5,10 @@
 id 在这里被丢掉，模型只能看到「有个表情」而看不到是哪个表情（真实样本见
 audit/inbound.jsonl 行 549/646）。
 
-数据文件 `faces.json` 取自 SnowLuma 落盘的 QQ 官方系统表情目录
-（Y:/SnowLuma/data/sys-face-catalog.json，由 SnowLuma 调 QQ sysface 接口拉取），
-id 与 `[CQ:face,id=N]` 同一个空间，名称是目录里的 qDes 去掉 QQ 的前缀 `/`，
-不是自己编的 id。增补直接改 faces.json 的 `faces`，本模块按 mtime 热加载。
+数据文件 `faces.json` 由所使用的 OneBot 协议端落盘的 QQ 官方系统表情目录导出
+（协议端通过 QQ sysface 接口拉取），id 与 `[CQ:face,id=N]` 同一个空间，
+名称是目录里的 qDes 去掉 QQ 的前缀 `/`，不是自己编的 id。导出方法见 docs/faces.md。
+增补直接改 faces.json 的 `faces`，本模块按 mtime 热加载。
 
 读的方向（入站）：命中 → `[表情:汪汪]`；未收录 → `[表情:id=123]`（保留原始 id，
 事后能拿真实记录补表）；没有 id → `[表情]`。
