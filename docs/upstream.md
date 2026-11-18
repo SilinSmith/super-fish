@@ -22,7 +22,7 @@
 
 ## 2. 对 AstrBot 的改动（最小补丁）
 
-只改 6 处，全部带 `# [XZY-Pxx]` 标记。完整锚点、原因、升级复核方法见
+只改 P01–P06 共 7 个落点，全部带 `# [XZY-Pxx]` 标记。完整锚点、原因、升级复核方法见
 **[astrbot-plugin/patches/registry.md](../astrbot-plugin/patches/registry.md)**。
 
 | ID | 文件（相对 `venv/Lib/site-packages/`） | 一句话 |

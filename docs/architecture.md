@@ -79,7 +79,7 @@ QQ NT ──注入──> SnowLuma ──OneBot 11──> dsh-onebot 插件 ─�
 2. **fail-closed**：硬规则（路径越界、权限、工具名）命中即拒绝；软规则失败才允许降级。
 3. **影子先行**：新通道先只记录判定、不发送；比对一致后切主。
 4. **隐私隔离**：记忆按来源场景/对象/敏感级别存储，检索时按当前场景过滤，不靠提示词约束。
-5. **不改上游源码**：对 AstrBot 只做 6 处带标记的最小补丁，登记在 `astrbot-plugin/patches/registry.md`。
+5. **不改上游源码**：对 AstrBot 只做 P01–P06 共 7 个落点的最小补丁，登记在 `astrbot-plugin/patches/registry.md`。
 6. **可回滚**：配置整份原子替换；bridge 模式可一键切回 `old`；补丁用 `original/` 覆盖回滚。
 
 ## 4. 失败与降级

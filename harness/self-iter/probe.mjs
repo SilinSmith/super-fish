@@ -12,7 +12,7 @@ import http from 'node:http';
 import { open, readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { readLease } from '../gpu-lease.mjs';
+import { readLease } from '../proxy/gpu-lease.mjs';
 import { FEED_PATH, GROUP_STATE_DIR, ROOT } from './store.mjs';
 
 const execFileAsync = promisify(execFile);

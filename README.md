@@ -11,7 +11,7 @@
 | 部件 | 目录 | 职责 | 运行形态 |
 |---|---|---|---|
 | AstrBot 插件 `xzy` | `astrbot-plugin/xzy/` | 对话策略、触发判定、防抖合批、工具调用、记忆/人格注入、出站清洗、审校与撤回、图片/视频/B 站等媒体能力 | AstrBot 进程内加载的 Python 插件 |
-| 上游补丁器 | `astrbot-plugin/patches/` | 对 AstrBot 4.14.6 的 6 处最小改动（P01–P06），幂等打补丁 + 校验 | 独立 Python 脚本 |
+| 上游补丁器 | `astrbot-plugin/patches/` | 对 AstrBot 4.14.6 的 P01–P06 共 7 个落点做最小改动，幂等打补丁 + 校验 | 独立 Python 脚本 |
 | bridge / Harness 接线 | `bridge/`、`harness/` | bridge 把 SnowLuma 的 OneBot 事件按模式过滤后转给 AstrBot；harness 是旧的 DSH 链路（persona 代理 1240、自迭代、`cordis` 配置示例） | Python 进程 + Node 进程 |
 | QQ 通道（SnowLuma 注入形态） | `qq-channel/` | SnowLuma 以原生 hook 注入 QQ NT，暴露 OneBot 11（3001 WS / 3000 HTTP）；附带自研 OneBot 插件与平台归一化层 | QQ NT 内注入 + Node 侧 WS |
 | 本地服务编排与启停 | `orchestration/` | 按契约顺序探测并拉起引擎、TTS、proxy、SnowLuma、bridge、AstrBot、控制台；守护、重载、无窗口自检 | PowerShell 5 + VBS 隐藏链 |

@@ -6,7 +6,7 @@
  */
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { LLM } from '../llm-config.mjs';
+import { LLM } from '../proxy/llm-config.mjs';
 import { CHARACTER_PATH, DIARY_PATH, NOTEBOOK_PATH, ROOT } from './store.mjs';
 
 const PROXY_BASE = process.env.QQ_PROXY_URL ?? 'http://127.0.0.1:' + (process.env.QQ_PROXY_PORT ?? 1240);

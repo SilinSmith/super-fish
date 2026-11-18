@@ -7,7 +7,7 @@
  * 任何情况下都不改身份、隐私、权限、硬规则、说话方式这些正文。
  */
 import { copyFile, readFile, rename, writeFile } from 'node:fs/promises';
-import { bigramSimilarity, migrateNotebook, upsertEntry } from '../memory.mjs';
+import { bigramSimilarity, migrateNotebook, upsertEntry } from '../proxy/memory.mjs';
 import {
     CHARACTER_PATH,
     NOTEBOOK_PATH,
